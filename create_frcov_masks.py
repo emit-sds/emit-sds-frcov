@@ -36,35 +36,76 @@ def process_files(fid, input_loc, output_loc, urban_data_loc, coastal_data_loc, 
         print('No path found for FID')
 
     ############ Generate masks ############
-
-    # # Orthorectify EMIT mask file 
-    ortho_mask_file = os.path.join(output_loc, 'masks', fid + '_ortho_mask.tif')
     glt_nodata_value = 0
+
+    # Orthorectify EMIT mask file 
+    ortho_mask_file = os.path.join(output_loc, 'masks', fid + '_ortho_mask.tif')
     apply_glt.main([glt_file, mask_file, ortho_mask_file, '--glt_nodata_value', glt_nodata_value], standalone_mode=False)
 
-    # Urban 
+    # Urban mask and orth
     urban_out_file = os.path.join(output_loc, 'masks', fid + '_ortho_urban.tif')
-    meta = urban_mask_cog(ortho_mask_file, urban_out_file, json_filename, urban_data_loc)
+    ref_path = ortho_mask_file
+    meta = urban_mask_cog(ortho_mask_file, urban_out_file, json_filename, urban_data_loc, ref_path)
 
-    # Coastal 
+
+    # Coastal mask and ortho
     coastal_out_file = os.path.join(output_loc, 'masks', fid + '_ortho_coastal.tif')
-    coastal_mask_cog(json_filename, coastal_out_file, coastal_data_loc, meta)
+    coastal_mask_cog(json_filename, coastal_out_file, coastal_data_loc, meta, ref_path)
     
-    # NDSI (generate + ortho)
+    # NDSI (generate and then ortho)
     ndsi_file = os.path.join(output_loc, 'masks', fid + '_ndsi.tif')
     ndsi(rfl_file, ndsi_file)
 
     ndsi_ortho_file = os.path.join(output_loc, 'masks', fid + '_ortho_ndsi.tif')
     apply_glt.main([glt_file, ndsi_file, ndsi_ortho_file, '--glt_nodata_value', glt_nodata_value], standalone_mode=False)
 
-    ## Stack raster masks and remove individual files?
+    ## Write raster stack to COG
+    _, urban_mask = open_tif(urban_out_file)
+    _, coastal_mask = open_tif(coastal_out_file)
+    _, ndsi_mask = open_tif(ndsi_ortho_file)
 
+    emit_meta, emit_mask = open_tif(ortho_mask_file)
+    emit_cloud_flag = emit_mask[:,:,0]
+    emit_cirrus_flag = emit_mask[:,:,1]
+    emit_water_flag = emit_mask[:,:,2]
+
+    stack = np.stack([emit_cloud_flag, emit_cirrus_flag, emit_water_flag, urban_mask[:,:,0], ndsi_mask[:,:,0], coastal_mask[:,:,0]], axis=2)
+    stack_out_file = os.path.join(output_loc, 'masks', fid + '_ortho_stack.tif')
+    write_cog(stack_out_file, stack, emit_meta) 
+
+    ## Remove intermediary files
     os.remove(ndsi_file)
-
+    os.remove(ndsi_ortho_file)
+    os.remove(ortho_mask_file)
+    os.remove(coastal_out_file)
+    os.remove(urban_out_file)
 
 #### 
+def warp_array_to_ref(array, source_ds, ref_path, nodata=0):
+    ref_ds = gdal.Open(ref_path)
 
-def urban_mask_cog(ortho_file, out_file, json_file, urban_data, output_res = 0.000542232520256, nodata_value = 0):
+    # Save arr in memory
+    mem_ds = gdal.GetDriverByName("MEM").Create('', source_ds.RasterXSize, source_ds.RasterYSize, 1, gdal.GDT_Byte)
+    mem_ds.SetGeoTransform(source_ds.GetGeoTransform())
+    mem_ds.SetProjection(source_ds.GetProjection())
+    mem_ds.GetRasterBand(1).WriteArray(array[:, :, 0])
+    mem_ds.GetRasterBand(1).SetNoDataValue(nodata)
+
+    # Get spatial transform
+    gt = ref_ds.GetGeoTransform()
+    w, h = ref_ds.RasterXSize, ref_ds.RasterYSize
+    bounds = (gt[0], gt[3] + gt[5]*h, gt[0] + gt[1]*w, gt[3])
+
+    # apply gdal transform to desired reference dataset  
+    opts = gdal.WarpOptions(format='MEM', dstSRS=ref_ds.GetProjection(), outputBounds=bounds,
+                            width=w, height=h, srcNodata=nodata, dstNodata=nodata, resampleAlg='bilinear')
+    warped = gdal.Warp('', mem_ds, options=opts)
+    out_arr = warped.ReadAsArray().reshape(h, w, 1)
+
+    return out_arr
+
+
+def urban_mask_cog(ortho_file, out_file, json_file, urban_data, ref_path, output_res = 0.000542232520256, nodata_value = 0):
 
     print(f"Running Urban Masking on {json_file}")
 
@@ -93,12 +134,14 @@ def urban_mask_cog(ortho_file, out_file, json_file, urban_data, output_res = 0.0
     result = np.logical_and(urban_array >= 0, urban_array == 50).astype(np.uint8)
     result = result.reshape((result.shape[0], result.shape[1], 1))
 
-    write_cog(out_file, result, meta)
+    result_warp = warp_array_to_ref(result, ds, ref_path)
+    write_cog(out_file, result_warp, meta)
+
     os.remove(temp_file)
     return meta 
 
 
-def coastal_mask_cog(json_file, out_file, coastal_data, meta, output_res = 0.000542232520256): 
+def coastal_mask_cog(json_file, out_file, coastal_data, meta, ref_path, output_res = 0.000542232520256): 
 
     print(f"Running Coastal Masking on {json_file}")
 
@@ -140,7 +183,8 @@ def coastal_mask_cog(json_file, out_file, coastal_data, meta, output_res = 0.000
     result = result.reshape((result.shape[0], result.shape[1], 1))
 
     # Write COG
-    write_cog(out_file, result, meta)
+    result_warp = warp_array_to_ref(result, mem_ds, ref_path)
+    write_cog(out_file, result_warp, meta)
 
     # Clean up temp files
     shp_ds = None
@@ -164,7 +208,7 @@ def ndsi(input_file, output_file, green_wl = 560, swir_wl = 1600, green_width = 
         green_width (int): Green band width [nm]; 0 = single wavelength.
         swir_width (int): SWIR1 band width [nm]; 0 = single wavelength.
     """
-    
+
     print(f"Running NDSI Calculation on {input_file}")
 
     meta, rfl = load_data(input_file, lazy=True, load_glt=ortho)
