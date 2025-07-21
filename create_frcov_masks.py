@@ -15,11 +15,24 @@ from spec_io import load_data, write_cog, open_tif
 @click.argument('output_loc', type=click.Path(exists=True), default="/home/colemanr/Unmixing/outputs/")
 @click.argument('urban_data_loc', type=click.Path(exists=True), default="/store/shared/landcover/complete_landcover.vrt")
 @click.argument('coastal_data_loc', type=click.Path(exists=True), default="/home/colemanr/Unmixing/coastal_mask/GSHHS_f_L1.shp")
-@click.argument('json_file', type=click.Path(exists=True), default="/store/brodrick/emit/emit-visuals/track_coverage_pub.json")
-def process_files(fid, input_loc, output_loc, urban_data_loc, coastal_data_loc, json_file):
+@click.argument('json_file_loc', type=click.Path(exists=True), default="/store/brodrick/emit/emit-visuals/track_coverage_pub.json")
+@click.argument('glt_nodata_value', type=int, default = 0)
+def process_files(fid, input_loc, output_loc, urban_data_loc, coastal_data_loc, json_file_loc, glt_nodata_value):
+    """
+    Generate QC product for EMIT fractional cover -- flag for urban, coastal, snow/ice, water, clouds
+
+    Args: 
+        fid (str):
+        input_loc (path str): path to EMIT reflectance, mask, GLT files
+        output_loc (path str): path to save generated mask output files 
+        urban_data_loc (path str): path to ESA worldcover dataset (.vrt/tif)
+        coastal_data_loc (path str): path to GSHHS coastal dataset (.shp)
+        json_file_loc (path str): path to EMIT info json file 
+        glt_nodata_value (int): defaults to 0 (nodata for .envi files) 
+    """
 
     # Write specific fid to geojson string
-    with open(json_file) as json_data:
+    with open(json_file_loc) as json_data:
         coverage = json.load(json_data)
     for feature in coverage["features"]:
         if feature["properties"].get("fid") == fid:
@@ -35,8 +48,7 @@ def process_files(fid, input_loc, output_loc, urban_data_loc, coastal_data_loc, 
     except Exception as e: 
         print('No path found for FID')
 
-    ############ Generate masks ############
-    glt_nodata_value = 0
+    ############ Generate QC and save to COG ############
 
     # Orthorectify EMIT mask file 
     ortho_mask_file = os.path.join(output_loc, 'masks', fid + '_ortho_mask.tif')
@@ -46,7 +58,6 @@ def process_files(fid, input_loc, output_loc, urban_data_loc, coastal_data_loc, 
     urban_out_file = os.path.join(output_loc, 'masks', fid + '_ortho_urban.tif')
     ref_path = ortho_mask_file
     meta = urban_mask_cog(ortho_mask_file, urban_out_file, json_filename, urban_data_loc, ref_path)
-
 
     # Coastal mask and ortho
     coastal_out_file = os.path.join(output_loc, 'masks', fid + '_ortho_coastal.tif')
@@ -73,39 +84,73 @@ def process_files(fid, input_loc, output_loc, urban_data_loc, coastal_data_loc, 
     stack_out_file = os.path.join(output_loc, 'masks', fid + '_ortho_stack.tif')
     write_cog(stack_out_file, stack, emit_meta) 
 
-    ## Remove intermediary files
+    ## clean up and remove intermediary files
     os.remove(ndsi_file)
     os.remove(ndsi_ortho_file)
     os.remove(ortho_mask_file)
     os.remove(coastal_out_file)
     os.remove(urban_out_file)
+    os.remove(json_filename)
 
 #### 
-def warp_array_to_ref(array, source_ds, ref_path, nodata=0):
+def warp_array_to_ref(array, source_ds, ref_path, nodata_value=0):
+    """
+    Warp input array to match projection/resolution of reference gtiff 
+
+    Args: 
+        array (np arr): input array to reproject
+        source_ds (gdal dataset): input dataset of array 
+        ref_path (str): path to reference tif 
+        nodata_value (int): nodata value to for gdal dataset
+
+    Out: 
+        out_arr (np arr): gdalwarped input array 
+    """
+
     ref_ds = gdal.Open(ref_path)
 
-    # Save arr in memory
+    # Save in memory
     mem_ds = gdal.GetDriverByName("MEM").Create('', source_ds.RasterXSize, source_ds.RasterYSize, 1, gdal.GDT_Byte)
     mem_ds.SetGeoTransform(source_ds.GetGeoTransform())
     mem_ds.SetProjection(source_ds.GetProjection())
     mem_ds.GetRasterBand(1).WriteArray(array[:, :, 0])
-    mem_ds.GetRasterBand(1).SetNoDataValue(nodata)
+    mem_ds.GetRasterBand(1).SetNoDataValue(nodata_value)
 
-    # Get spatial transform
+    # Extract spatial transform
     gt = ref_ds.GetGeoTransform()
-    w, h = ref_ds.RasterXSize, ref_ds.RasterYSize
-    bounds = (gt[0], gt[3] + gt[5]*h, gt[0] + gt[1]*w, gt[3])
+    bounds = (gt[0], gt[3] + gt[5]*ref_ds.RasterYSize, gt[0] + gt[1]*ref_ds.RasterXSize, gt[3])
 
     # apply gdal transform to desired reference dataset  
-    opts = gdal.WarpOptions(format='MEM', dstSRS=ref_ds.GetProjection(), outputBounds=bounds,
-                            width=w, height=h, srcNodata=nodata, dstNodata=nodata, resampleAlg='bilinear')
-    warped = gdal.Warp('', mem_ds, options=opts)
-    out_arr = warped.ReadAsArray().reshape(h, w, 1)
+    warp_options = gdal.WarpOptions(format='MEM', 
+                            dstSRS=ref_ds.GetProjection(), 
+                            outputBounds=bounds,
+                            width=ref_ds.RasterXSize, 
+                            height=ref_ds.RasterYSize, 
+                            srcNodata=nodata_value, 
+                            dstNodata=nodata_value, 
+                            resampleAlg='bilinear')
+    warped = gdal.Warp('', mem_ds, options=warp_options)
+    out_arr = warped.ReadAsArray().reshape(ref_ds.RasterYSize, ref_ds.RasterXSize,1)
 
     return out_arr
 
 
 def urban_mask_cog(ortho_file, out_file, json_file, urban_data, ref_path, output_res = 0.000542232520256, nodata_value = 0):
+    """
+    Generate mask of urban/built-up areas and save as COG
+    
+    Args: 
+        ortho_file (str): path to orthorectified EMIT mask file 
+        out_file (str): path to save urban area COG
+        json_file (str): path to json of EMIT tile extent
+        urban_data (str): path to ESA worldcover dataset (.vrt/tif)
+        ref_path (str): path to reference tif to align data with
+        output_res (float): default to EMIT res 
+        nodata_value (int): nodata value for gdal dataset
+
+    Out: 
+        meta (GenericGeoMetadata): An object containing the wavelengths and FWHM.
+    """
 
     print(f"Running Urban Masking on {json_file}")
 
@@ -134,6 +179,7 @@ def urban_mask_cog(ortho_file, out_file, json_file, urban_data, ref_path, output
     result = np.logical_and(urban_array >= 0, urban_array == 50).astype(np.uint8)
     result = result.reshape((result.shape[0], result.shape[1], 1))
 
+    # Align to ref_path (EMIT mask file) and write to COG
     result_warp = warp_array_to_ref(result, ds, ref_path)
     write_cog(out_file, result_warp, meta)
 
@@ -142,6 +188,17 @@ def urban_mask_cog(ortho_file, out_file, json_file, urban_data, ref_path, output
 
 
 def coastal_mask_cog(json_file, out_file, coastal_data, meta, ref_path, output_res = 0.000542232520256): 
+    """
+    Generate mask of coastal water features and save as COG
+    
+    Args:
+        json_file (str): path to json of EMIT tile extent
+        out_file (str): path to save coastal area COG
+        coastal_data (str): path to GSHHS coastal dataset (.shp)
+        meta (GenericGeoMetadata):  An object containing the wavelengths and FWHM.
+        ref_path (str): path to reference tif to align data with
+        output_res (float): default to EMIT res 
+    """
 
     print(f"Running Coastal Masking on {json_file}")
 
@@ -182,8 +239,8 @@ def coastal_mask_cog(json_file, out_file, coastal_data, meta, ref_path, output_r
     result = mem_ds.GetRasterBand(1).ReadAsArray()
     result = result.reshape((result.shape[0], result.shape[1], 1))
 
-    # Write COG
-    result_warp = warp_array_to_ref(result, mem_ds, ref_path)
+    # Align to ref_path (EMIT mask file) and write to COG
+    result_warp = warp_array_to_ref(result, mem_ds, ref_path) 
     write_cog(out_file, result_warp, meta)
 
     # Clean up temp files
@@ -199,10 +256,11 @@ def coastal_mask_cog(json_file, out_file, coastal_data, meta, ref_path, output_r
 
 def ndsi(input_file, output_file, green_wl = 560, swir_wl = 1600, green_width = 0, swir_width = 0, threshold = 0.4, ortho=True):
     """
-    Calculate NDSI (normalized difference snow index) -- not orthorectified yet 
+    Calculate NDSI (normalized difference snow index) and save as cog 
 
     Args:
-        input_file (str): Path to the input file.
+        input_file (str): Path to the EMIT reflectance
+        output_file (str): Path to save NDSI COG
         green_wl (int): Green band wavelength [nm].
         swir_wl (int): SWIR1 band wavelength [nm].
         green_width (int): Green band width [nm]; 0 = single wavelength.
@@ -228,7 +286,12 @@ def ndsi(input_file, output_file, green_wl = 560, swir_wl = 1600, green_width = 
 
 def geojson_str_to_feature_file(geojson_str, fid, output_filename):
     """
-    Convert a GeoJSON geometry string and save as a json in correct format 
+    Convert a GeoJSON geometry string to save as a json
+
+    Args:
+        geojson_str (str): geojson string describing EMIT tile extent
+        fid (str): EMIT fid
+        output_filename (str): output json file 
     """
     geometry = json.loads(geojson_str)
     
@@ -250,7 +313,6 @@ def geojson_str_to_feature_file(geojson_str, fid, output_filename):
 
 
 ##########
-
 
 
 @click.group()
