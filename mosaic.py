@@ -12,103 +12,7 @@ import logging
 from tqdm import tqdm
 from copy import deepcopy
 osr.UseExceptions()
-
-@click.command()
-@click.argument('ortho_file', type=click.Path(exists=True))
-@click.argument('json_file', type=click.Path(exists=True))
-@click.argument('urban_data', type=click.Path(exists=True))
-@click.argument('output_file', type=click.Path())
-@click.option('--output_res', type=float, default = 0.000542232520256) ## default to EMIT res
-@click.option('--nodata_value', type=float, default=0)
-def urban_mask(ortho_file, json_file, urban_data, output_file, output_res, nodata_value):
-
-    # Get SRS info from orthoed file 
-    ds = gdal.Open(ortho_file)
-    wkt = ds.GetProjection()
-    ds = None
-
-    # Build warp options
-    warp_options = gdal.WarpOptions(
-        cutlineDSName=json_file,
-        cropToCutline=True,
-        dstNodata=nodata_value,
-        xRes=output_res,
-        yRes=-output_res,
-        dstSRS=wkt
-    )
-    gdal.Warp(destNameOrDestDS="clipped.tif", srcDSOrSrcDSTab=urban_data, options=warp_options)
-
-    # Generate geotiff mask of urban areas (50 in ESA worldcover)
-    ds = gdal.Open("clipped.tif") # temporary file 
-    band = ds.GetRasterBand(1)
-    array = band.ReadAsArray()
-    result = np.logical_and(array >= 0, array == 50).astype(np.uint8)
-
-    # Create output file with the same georeference and projection
-    driver = gdal.GetDriverByName("GTiff")
-    out_ds = driver.Create(output_file, ds.RasterXSize, ds.RasterYSize, 1, gdal.GDT_Byte)
-    out_ds.SetGeoTransform(ds.GetGeoTransform())
-    out_ds.SetProjection(ds.GetProjection())
-
-    # Write result and set NoData value
-    out_band = out_ds.GetRasterBand(1)
-    out_band.WriteArray(result)
-    out_band.SetNoDataValue(nodata_value)
-
-    os.remove("clipped.tif") # del temporary file 
-
-    print('...Writing urban mask')
-
-
-@click.command()
-@click.argument('json_file', type=click.Path(exists=True))
-@click.argument('coastal_data', type=click.Path(exists=True))
-@click.argument('output_file', type=click.Path(exists=True))
-@click.option('--output_res', type=float, default = 0.000542232520256) ## default to EMIT res
-def coastal_mask(json_file, coastal_data, output_file, output_res): 
-
-    # Clip large coastal shapefile to EMIT extent (too slow) 
-    gdal.VectorTranslate(
-        "temp.shp",                              # Output file
-        coastal_data,                            # Input file (coastal data)
-        options=gdal.VectorTranslateOptions(
-            format="ESRI Shapefile",
-            clipSrc=json_file                    # Clip to tile extent 
-        )
-    )
-
-    # Get extent from shapefile for new raster 
-    shp_ds = ogr.Open("temp.shp")
-    layer = shp_ds.GetLayer()   
-    minx, maxx, miny, maxy = layer.GetExtent()
-    x_res = int((maxx - minx) / output_res)
-    y_res = int((maxy - miny) / output_res)
-
-    # Create output raster
-    out_ds = gdal.GetDriverByName("GTiff").Create(output_file, x_res, y_res, 1, gdal.GDT_Byte)
-    out_ds.SetGeoTransform((minx, output_res, 0, maxy, 0, -output_res))
-    out_band = out_ds.GetRasterBand(1)
-    out_band.Fill(1)
-
-    # Set projection and rasterize 
-    srs = layer.GetSpatialRef()
-    if srs:
-        out_ds.SetProjection(srs.ExportToWkt())
-
-    gdal.RasterizeLayer(
-        out_ds,
-        [1],  # band index
-        layer,
-        burn_values=[0],
-        options=["INVERT=FALSE"]
-    )
-
-    os.remove("temp.shp") # del temporary file 
-
-    print('...Writing coastal mask')
     
-
-
 def remove_negatives(glt, clean_contiguous=False, clean_interpolated=False):
     """
     Remove the negative values from the GLT.
@@ -542,8 +446,6 @@ def cli():
 cli.add_command(build_obs_nc)
 cli.add_command(apply_glt)
 cli.add_command(stack_glts)
-cli.add_command(urban_mask)
-cli.add_command(coastal_mask)
 
 
 if __name__ == '__main__':
