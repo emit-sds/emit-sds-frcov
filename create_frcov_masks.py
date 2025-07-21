@@ -5,8 +5,8 @@ import os
 from osgeo import gdal, ogr 
 import numpy as np
 
-import spectral_util 
-import mosaic
+from mosaic import apply_glt
+from spec_io import load_data, write_cog, open_tif
 
 ### 
 @click.command()
@@ -37,39 +37,42 @@ def process_files(fid, input_loc, output_loc, urban_data_loc, coastal_data_loc, 
 
     ############ Generate masks ############
 
-    # Orthorectify EMIT mask file 
+    # # Orthorectify EMIT mask file 
     ortho_mask_file = os.path.join(output_loc, 'masks', fid + '_ortho_mask.tif')
     glt_nodata_value = 0
-    mosaic.apply_glt.main([glt_file, mask_file, ortho_mask_file, '--glt_nodata_value', glt_nodata_value], standalone_mode=False)
+    apply_glt.main([glt_file, mask_file, ortho_mask_file, '--glt_nodata_value', glt_nodata_value], standalone_mode=False)
 
     # Urban 
-    urban_out_file = os.path.join(output_loc, 'masks', fid + '_urban.tif')
-    urban_mask(ortho_mask_file, json_filename, urban_data_loc, urban_out_file)
+    urban_out_file = os.path.join(output_loc, 'masks', fid + '_ortho_urban.tif')
+    meta = urban_mask_cog(ortho_mask_file, urban_out_file, json_filename, urban_data_loc)
 
     # Coastal 
-    coastal_out_file = os.path.join(output_loc, 'masks', fid + '_coastal.tif')
-    coastal_mask(json_filename, coastal_data_loc, coastal_out_file)
+    coastal_out_file = os.path.join(output_loc, 'masks', fid + '_ortho_coastal.tif')
+    coastal_mask_cog(json_filename, coastal_out_file, coastal_data_loc, meta)
     
-    # NDSI + RGB (generate + ortho)
+    # NDSI (generate + ortho)
     ndsi_file = os.path.join(output_loc, 'masks', fid + '_ndsi.tif')
-    rgb_file = os.path.join(output_loc, 'masks', fid + '_rgb.tif')
-    spectral_util.ndsi.main([rfl_file, ndsi_file], standalone_mode=False)
-    spectral_util.rgb.main([rfl_file, rgb_file], standalone_mode=False)
+    ndsi(rfl_file, ndsi_file)
 
     ndsi_ortho_file = os.path.join(output_loc, 'masks', fid + '_ortho_ndsi.tif')
-    rgb_ortho_file = os.path.join(output_loc, 'masks', fid + '_ortho_rgb.tif')
-    mosaic.apply_glt.main([glt_file, ndsi_file, ndsi_ortho_file, '--glt_nodata_value', glt_nodata_value], standalone_mode=False)
-    mosaic.apply_glt.main([glt_file, rgb_file, rgb_ortho_file, '--glt_nodata_value', glt_nodata_value], standalone_mode=False)
+    apply_glt.main([glt_file, ndsi_file, ndsi_ortho_file, '--glt_nodata_value', glt_nodata_value], standalone_mode=False)
+
+    ## Stack raster masks and remove individual files?
+
+    os.remove(ndsi_file)
 
 
-#### #### 
+#### 
 
-def urban_mask(ortho_file, json_file, urban_data, output_file, output_res = 0.000542232520256, nodata_value = 0):
+def urban_mask_cog(ortho_file, out_file, json_file, urban_data, output_res = 0.000542232520256, nodata_value = 0):
+
+    print(f"Running Urban Masking on {json_file}")
 
     # Get SRS info from orthoed file 
     ds = gdal.Open(ortho_file)
     wkt = ds.GetProjection()
     ds = None
+    temp_file = "clipped.tif"
 
     # Build warp options
     warp_options = gdal.WarpOptions(
@@ -80,30 +83,25 @@ def urban_mask(ortho_file, json_file, urban_data, output_file, output_res = 0.00
         yRes=-output_res,
         dstSRS=wkt
     )
-    gdal.Warp(destNameOrDestDS="clipped.tif", srcDSOrSrcDSTab=urban_data, options=warp_options)
+    gdal.Warp(destNameOrDestDS=temp_file, srcDSOrSrcDSTab=urban_data, options=warp_options)
 
     # Generate geotiff mask of urban areas (50 in ESA worldcover)
-    ds = gdal.Open("clipped.tif") # temporary file 
+    meta, _ = open_tif(temp_file) 
+    ds = gdal.Open(temp_file)
     band = ds.GetRasterBand(1)
-    array = band.ReadAsArray()
-    result = np.logical_and(array >= 0, array == 50).astype(np.uint8)
+    urban_array = band.ReadAsArray()
+    result = np.logical_and(urban_array >= 0, urban_array == 50).astype(np.uint8)
+    result = result.reshape((result.shape[0], result.shape[1], 1))
 
-    # Create output file with the same georeference and projection
-    driver = gdal.GetDriverByName("GTiff")
-    out_ds = driver.Create(output_file, ds.RasterXSize, ds.RasterYSize, 1, gdal.GDT_Byte)
-    out_ds.SetGeoTransform(ds.GetGeoTransform())
-    out_ds.SetProjection(ds.GetProjection())
+    write_cog(out_file, result, meta)
+    os.remove(temp_file)
+    return meta 
 
-    # Write result and set NoData value
-    out_band = out_ds.GetRasterBand(1)
-    out_band.WriteArray(result)
-    out_band.SetNoDataValue(nodata_value)
 
-    os.remove("clipped.tif") # del temporary file 
+def coastal_mask_cog(json_file, out_file, coastal_data, meta, output_res = 0.000542232520256): 
 
-    print('...Writing urban mask')
+    print(f"Running Coastal Masking on {json_file}")
 
-def coastal_mask(json_file, coastal_data, output_file, output_res = 0.000542232520256): 
     # Clip large coastal shapefile to EMIT extent (too slow) 
     gdal.VectorTranslate(
         "temp.shp",                              # Output file
@@ -121,28 +119,68 @@ def coastal_mask(json_file, coastal_data, output_file, output_res = 0.0005422325
     x_res = int((maxx - minx) / output_res)
     y_res = int((maxy - miny) / output_res)
 
-    # Create output raster
-    out_ds = gdal.GetDriverByName("GTiff").Create(output_file, x_res, y_res, 1, gdal.GDT_Byte)
-    out_ds.SetGeoTransform((minx, output_res, 0, maxy, 0, -output_res))
-    out_band = out_ds.GetRasterBand(1)
-    out_band.Fill(1)
+    # Create in-memory raster
+    mem_ds = gdal.GetDriverByName("MEM").Create("", x_res, y_res, 1, gdal.GDT_Byte)
+    geotransform = (minx, output_res, 0, maxy, 0, -output_res)
+    mem_ds.SetGeoTransform(geotransform)
 
-    # Set projection and rasterize 
+    # Set projection from shapefile
     srs = layer.GetSpatialRef()
     if srs:
-        out_ds.SetProjection(srs.ExportToWkt())
+        mem_ds.SetProjection(srs.ExportToWkt())
+    else:
+        raise ValueError("Shapefile has no spatial reference.")
 
-    gdal.RasterizeLayer(
-        out_ds,
-        [1],  # band index
-        layer,
-        burn_values=[0],
-        options=["INVERT=FALSE"]
-    )
+    # Initialize with land (1), then burn coastal (0)
+    mem_ds.GetRasterBand(1).Fill(1)
+    gdal.RasterizeLayer(mem_ds, [1], layer, burn_values=[0], options=["INVERT=FALSE"])
 
-    os.remove("temp.shp") # del temporary file 
+    # Read result as NumPy array
+    result = mem_ds.GetRasterBand(1).ReadAsArray()
+    result = result.reshape((result.shape[0], result.shape[1], 1))
 
-    print('...Writing coastal mask')
+    # Write COG
+    write_cog(out_file, result, meta)
+
+    # Clean up temp files
+    shp_ds = None
+    mem_ds = None
+    for ext in [".shp", ".shx", ".dbf", ".prj"]:
+        try:
+            os.remove(f"temp{ext}")
+        except FileNotFoundError:
+            pass
+
+
+
+def ndsi(input_file, output_file, green_wl = 560, swir_wl = 1600, green_width = 0, swir_width = 0, threshold = 0.4, ortho=True):
+    """
+    Calculate NDSI (normalized difference snow index) -- not orthorectified yet 
+
+    Args:
+        input_file (str): Path to the input file.
+        green_wl (int): Green band wavelength [nm].
+        swir_wl (int): SWIR1 band wavelength [nm].
+        green_width (int): Green band width [nm]; 0 = single wavelength.
+        swir_width (int): SWIR1 band width [nm]; 0 = single wavelength.
+    """
+    
+    print(f"Running NDSI Calculation on {input_file}")
+
+    meta, rfl = load_data(input_file, lazy=True, load_glt=ortho)
+
+    green = rfl[..., meta.wl_index(green_wl, green_width)]
+    swir = rfl[..., meta.wl_index(swir_wl, swir_width)]
+
+    ndsi = (green - swir) / (green + swir)
+    ndsi = ndsi.squeeze()
+    ndsi[np.isfinite(ndsi) == False] = -9999
+    ndsi = ndsi.reshape((ndsi.shape[0], ndsi.shape[1], 1))
+
+    ndsi[ndsi > threshold] = 1
+    ndsi[ndsi <= threshold] = 0   
+
+    write_cog(output_file, ndsi, meta, ortho=ortho)
 
 def geojson_str_to_feature_file(geojson_str, fid, output_filename):
     """
