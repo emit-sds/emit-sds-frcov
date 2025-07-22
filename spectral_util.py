@@ -143,43 +143,6 @@ def rgb(input_file, output_file, ortho, red_wl, green_wl, blue_wl, stretch, scal
 
 @click.command()
 @common_arguments
-@click.option('--green_wl', default=560, help='Green band wavelength [nm]')
-@click.option('--swir_wl', default=1600, help='SWIR1 band wavelength [nm]')
-@click.option('--green_width', default=0, help='Red Green width [nm]; 0 = single wavelength')
-@click.option('--swir_width', default=0, help='SWIR1 band width [nm]; 0 = single wavelength')
-@click.option('--threshold', default=0.4, help='NDSI threshold, mask all pixels > threshold')
-def ndsi(input_file, output_file, ortho, green_wl, swir_wl, green_width, swir_width, threshold):
-    """
-    Calculate NDSI (normalized difference snow index). 
-
-    Args:
-        input_file (str): Path to the input file.
-        output_file (str): Path to the output file.
-        ortho (bool): Orthorectify the output.
-        green_wl (int): Green band wavelength [nm].
-        swir_wl (int): SWIR1 band wavelength [nm].
-        green_width (int): Green band width [nm]; 0 = single wavelength.
-        swir_width (int): SWIR1 band width [nm]; 0 = single wavelength.
-    """
-    click.echo(f"Running NDSI Calculation on {input_file}")
-    meta, rfl = load_data(input_file, lazy=True, load_glt=ortho)
-
-    green = rfl[..., meta.wl_index(green_wl, green_width)]
-    swir = rfl[..., meta.wl_index(swir_wl, swir_width)]
-
-    ndsi = (green - swir) / (green + swir)
-    ndsi = ndsi.squeeze()
-    ndsi[np.isfinite(ndsi) == False] = -9999
-    ndsi = ndsi.reshape((ndsi.shape[0], ndsi.shape[1], 1))
-
-    ndsi[ndsi > threshold] = 1
-    ndsi[ndsi <= threshold] = 0   
-
-    write_cog(output_file, ndsi, meta, ortho=ortho)
-
-
-@click.command()
-@common_arguments
 def ndwi(input_file, output_file):
     click.echo("This doesn't work yet.")
 
@@ -190,7 +153,6 @@ def cli():
 cli.add_command(ndvi)
 cli.add_command(nbr)
 cli.add_command(rgb)
-cli.add_command(ndsi)
 cli.add_command(ndwi)
 
 
