@@ -103,7 +103,7 @@ def process_files(fid, input_loc, output_loc, urban_data_loc, coastal_data_loc, 
 
 #### 
 
-def singleband_raster_unique(raster_stack, out_file, nodata_value = 0): 
+def singleband_raster_unique(raster_stack, out_file): 
     """
     Leverage distinct sums (aka power of 2 Sidon set) to condense a multiband raster into a single-band without losing information 
     about pixels that are QC flagged for multiple reasons (e.g., both a cloud and an urban pixel). There are 63 distinct combinations 
@@ -121,7 +121,6 @@ def singleband_raster_unique(raster_stack, out_file, nodata_value = 0):
     Args: 
         raster_stack (str): path to multiband raster input 
         out_file (str): path to save singleband raster output
-        nodata_value (int): nodata value for writing gtiff (defaults to 0)
     """
 
     subprocess.run([
@@ -134,7 +133,7 @@ def singleband_raster_unique(raster_stack, out_file, nodata_value = 0):
         '-F', raster_stack, '--F_band=6',
         '--calc', '(A*1)+(B*2)+(C*4)+(D*8)+(E*16)+(F*32)',
         '--outfile', out_file, 
-        '--NoDataValue', nodata_value,
+        '--NoDataValue=0',
         '--type=Int8',
         '--co', 'COMPRESS=LZW', ## remainder are from write_cog code 
         '--co', 'BIGTIFF=YES',
