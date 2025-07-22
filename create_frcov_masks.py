@@ -5,8 +5,12 @@ import os
 from osgeo import gdal, ogr 
 import numpy as np
 
+import subprocess
+
 from mosaic import apply_glt
 from spec_io import load_data, write_cog, open_tif
+
+# TODO - fix bug with coastal band (hawaii and yucatan case)
 
 ### 
 @click.command()
@@ -92,7 +96,56 @@ def process_files(fid, input_loc, output_loc, urban_data_loc, coastal_data_loc, 
     os.remove(urban_out_file)
     os.remove(json_filename)
 
+    ## Convert to singleband 
+    single_band_stack = os.path.join(output_loc, 'masks/single_band', fid + '_ortho_single_stack.tif')
+    singleband_raster_unique(stack_out_file, single_band_stack)
+
+
 #### 
+
+def singleband_raster_unique(raster_stack, out_file, nodata_value = 0): 
+    """
+    Leverage distinct sums (aka power of 2 Sidon set) to condense a multiband raster into a single-band without losing information 
+    about pixels that are QC flagged for multiple reasons (e.g., both a cloud and an urban pixel). There are 63 distinct combinations 
+    for the current 6 band QC product. 
+
+    If a given image has N bands, then the values attributed to each band in the single-band raster are {2^0, 2^1, 2^2, ... 2^N}
+
+    Band 1 - Cloud = 1
+    Band 2 - Cirrus = 2
+    Band 3 - Water = 4
+    Band 4 - Urban = 8
+    Band 5 - Snow/Ice = 16
+    Band 6 - Coastal = 32
+
+    Args: 
+        raster_stack (str): path to multiband raster input 
+        out_file (str): path to save singleband raster output
+        nodata_value (int): nodata value for writing gtiff (defaults to 0)
+    """
+
+    subprocess.run([
+        'gdal_calc.py',
+        '-A', raster_stack, '--A_band=1',
+        '-B', raster_stack, '--B_band=2',
+        '-C', raster_stack, '--C_band=3',
+        '-D', raster_stack, '--D_band=4',
+        '-E', raster_stack, '--E_band=5',
+        '-F', raster_stack, '--F_band=6',
+        '--calc', '(A*1)+(B*2)+(C*4)+(D*8)+(E*16)+(F*32)',
+        '--outfile', out_file, 
+        '--NoDataValue', nodata_value,
+        '--type=Int8',
+        '--co', 'COMPRESS=LZW', ## remainder are from write_cog code 
+        '--co', 'BIGTIFF=YES',
+        '--co', 'COPY_SRC_OVERVIEWS=YES',
+        '--co', 'TILED=YES',
+        '--co', 'BLOCKXSIZE=256',
+        '--co', 'BLOCKYSIZE=256',
+        '--overwrite'
+    ], check=True)
+        
+
 def warp_array_to_ref(array, source_ds, ref_path, nodata_value=0):
     """
     Warp input array to match projection/resolution of reference gtiff 
