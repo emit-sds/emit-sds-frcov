@@ -23,7 +23,13 @@ from spec_io import load_data, write_cog, open_tif
 @click.argument('glt_nodata_value', type=int, default = 0)
 def process_files(fid, input_loc, output_loc, urban_data_loc, coastal_data_loc, json_file_loc, glt_nodata_value):
     """
-    Generate QC product for EMIT fractional cover -- flag for urban, coastal, snow/ice, water, clouds
+    Generate QC product for EMIT fractional cover 
+
+    Writes single band COG with following values: 
+        Cloud (EMIT cloud + cirrus flag)    = 1
+        Urban                               = 2
+        Water (EMIT water + coastal mask)   = 3
+        Snow/Ice                            = 4
 
     Args: 
         fid (str):
@@ -74,21 +80,23 @@ def process_files(fid, input_loc, output_loc, urban_data_loc, coastal_data_loc, 
     ndsi_ortho_file = os.path.join(output_loc, 'masks', fid + '_ortho_ndsi.tif')
     apply_glt.main([glt_file, ndsi_file, ndsi_ortho_file, '--glt_nodata_value', glt_nodata_value], standalone_mode=False)
 
-    ## Write raster stack to COG
+    ## Convert to singleband COG 
     _, urban_mask = open_tif(urban_out_file)
     _, coastal_mask = open_tif(coastal_out_file)
     _, ndsi_mask = open_tif(ndsi_ortho_file)
 
     emit_meta, emit_mask = open_tif(ortho_mask_file)
-    emit_cloud_flag = emit_mask[:,:,0]
-    emit_cirrus_flag = emit_mask[:,:,1]
-    emit_water_flag = emit_mask[:,:,2]
+    emit_cloud = emit_mask[:,:,0]
+    emit_cirrus = emit_mask[:,:,1]
+    emit_water = emit_mask[:,:,2]
 
-    stack = np.stack([emit_cloud_flag, emit_cirrus_flag, emit_water_flag, urban_mask[:,:,0], ndsi_mask[:,:,0], coastal_mask[:,:,0]], axis=2)
-    stack_out_file = os.path.join(output_loc, 'masks', fid + '_ortho_stack.tif')
-    write_cog(stack_out_file, stack, emit_meta) 
+    ## Convert to singleband 
+    single_band_stack = os.path.join(output_loc, 'masks', fid + '_ortho_hierarchy.tif')
+    singleband_raster_hierarchy(emit_cloud, emit_cirrus, emit_water, 
+                                urban_mask[:,:,0], ndsi_mask[:,:,0], coastal_mask[:,:,0], 
+                                single_band_stack, emit_meta)
 
-    ## clean up and remove intermediary files
+    ## Clean up and remove intermediary files
     os.remove(ndsi_file)
     os.remove(ndsi_ortho_file)
     os.remove(ortho_mask_file)
@@ -96,54 +104,43 @@ def process_files(fid, input_loc, output_loc, urban_data_loc, coastal_data_loc, 
     os.remove(urban_out_file)
     os.remove(json_filename)
 
-    ## Convert to singleband 
-    single_band_stack = os.path.join(output_loc, 'masks/single_band', fid + '_ortho_single_stack.tif')
-    singleband_raster_unique(stack_out_file, single_band_stack)
-
 
 #### 
-
-def singleband_raster_unique(raster_stack, out_file): 
+def singleband_raster_hierarchy(cloud, cirrus, water, urban, snow_ice, coastal, out_file, meta):
     """
-    Leverage distinct sums (aka power of 2 Sidon set) to condense a multiband raster into a single-band without losing information 
-    about pixels that are QC flagged for multiple reasons (e.g., both a cloud and an urban pixel). There are 63 distinct combinations 
-    for the current 6 band QC product. 
+    Condense multiple row x col arrays into a single band COG with a hierarchical classification process
+    
+    Writes single band COG with following values: 
+        Cloud (EMIT cloud + cirrus flag)    = 1
+        Urban                               = 2
+        Water (EMIT water + coastal mask)   = 3
+        Snow/Ice                            = 4
 
-    If a given image has N bands, then the values attributed to each band in the single-band raster are {2^0, 2^1, 2^2, ... 2^N}
-
-    Band 1 - Cloud = 1
-    Band 2 - Cirrus = 2
-    Band 3 - Water = 4
-    Band 4 - Urban = 8
-    Band 5 - Snow/Ice = 16
-    Band 6 - Coastal = 32
+    # --- hierarchy order --- # 
+    if cloud or cirrus or (cloud + cirrus): 
+        QC = 1
+    if urban: 
+        QC = 2
+    if water or coastal or (water + coastal): 
+        QC = 3
+    if snow/ice: 
+        QC = 4
 
     Args: 
-        raster_stack (str): path to multiband raster input 
+        cloud, cirrus, water, urban, snow_ice, coastal (arr): 6 row x col arrays, where 1 = value to be masked out for that variable
         out_file (str): path to save singleband raster output
+        meta (GenericGeoMetadata): An object containing the wavelengths and FWHM.
     """
 
-    subprocess.run([
-        'gdal_calc.py',
-        '-A', raster_stack, '--A_band=1',
-        '-B', raster_stack, '--B_band=2',
-        '-C', raster_stack, '--C_band=3',
-        '-D', raster_stack, '--D_band=4',
-        '-E', raster_stack, '--E_band=5',
-        '-F', raster_stack, '--F_band=6',
-        '--calc', '(A*1)+(B*2)+(C*4)+(D*8)+(E*16)+(F*32)',
-        '--outfile', out_file, 
-        '--NoDataValue=0',
-        '--type=Int8',
-        '--co', 'COMPRESS=LZW', ## remainder are from write_cog code 
-        '--co', 'BIGTIFF=YES',
-        '--co', 'COPY_SRC_OVERVIEWS=YES',
-        '--co', 'TILED=YES',
-        '--co', 'BLOCKXSIZE=256',
-        '--co', 'BLOCKYSIZE=256',
-        '--overwrite'
-    ], check=True)
-        
+    # apply hierarchical categorization logic 
+    result = np.zeros((cloud.shape[0], cloud.shape[1]), dtype=np.uint8)
+    result[(cloud == 1) | (cirrus == 1)] = 1
+    result[(urban == 1) & (result == 0)] = 2
+    result[((water == 1) | (coastal == 1)) & (result == 0)] = 3
+    result[(snow_ice == 1) & (result == 0)] = 4
+
+    result = result.reshape((result.shape[0], result.shape[1], 1))
+    write_cog(out_file, result, meta, nodata_value=0) # nodata value of 0 b/c of np array initialization
 
 def warp_array_to_ref(array, source_ds, ref_path, nodata_value=0):
     """
@@ -160,6 +157,8 @@ def warp_array_to_ref(array, source_ds, ref_path, nodata_value=0):
     """
 
     ref_ds = gdal.Open(ref_path)
+    if ref_ds is None:
+        raise FileNotFoundError(f"Could not open {ref_path}")
 
     # Save in memory
     mem_ds = gdal.GetDriverByName("MEM").Create('', source_ds.RasterXSize, source_ds.RasterYSize, 1, gdal.GDT_Byte)
@@ -208,6 +207,8 @@ def urban_mask_cog(ortho_file, out_file, json_file, urban_data, ref_path, output
 
     # Get SRS info from orthoed file 
     ds = gdal.Open(ortho_file)
+    if ds is None:
+        raise FileNotFoundError(f"Could not open {ortho_file}")
     wkt = ds.GetProjection()
     ds = None
     temp_file = "clipped.tif"
@@ -305,7 +306,6 @@ def coastal_mask_cog(json_file, out_file, coastal_data, meta, ref_path, output_r
             pass
 
 
-
 def ndsi(input_file, output_file, green_wl = 560, swir_wl = 1600, green_width = 0, swir_width = 0, threshold = 0.4, ortho=True):
     """
     Calculate NDSI (normalized difference snow index) and save as cog 
@@ -363,6 +363,46 @@ def geojson_str_to_feature_file(geojson_str, fid, output_filename):
     with open(output_filename, 'w') as f:
         json.dump(feature_collection, f, indent=2)
 
+## NOT CURRENTLY USED 
+def singleband_raster_unique(raster_stack, out_file): 
+    """
+    Leverage distinct sums (aka 2^n Sidon set) to condense a multiband raster into a single band without losing 
+    information about pixels that are QC flagged for multiple reasons (e.g., both a cloud and an urban pixel).
+    There are 63 distinct combinations for the current 6 band QC product. 
+
+    If a given image has N bands, then the values attributed to each band in the single-band raster are {2^0, 2^1, 2^2, ... 2^N}
+
+    Band 1 - Cloud = 1
+    Band 2 - Cirrus = 2
+    Band 3 - Water = 4
+    Band 4 - Urban = 8
+    Band 5 - Snow/Ice = 16
+    Band 6 - Coastal = 32
+
+    Example --> pixel value of 52 = pixel flagged as water, snow/ice, coastal (4+16+32 = 52)
+    """
+
+    subprocess.run([
+        'gdal_calc.py',
+        '-A', raster_stack, '--A_band=1',
+        '-B', raster_stack, '--B_band=2',
+        '-C', raster_stack, '--C_band=3',
+        '-D', raster_stack, '--D_band=4',
+        '-E', raster_stack, '--E_band=5',
+        '-F', raster_stack, '--F_band=6',
+        '--calc', '(A*1)+(B*2)+(C*4)+(D*8)+(E*16)+(F*32)',
+        '--outfile', out_file, 
+        '--NoDataValue=0',
+        '--type=Int8',
+        '--co', 'COMPRESS=LZW', ## remainder are from write_cog code
+        '--co', 'BIGTIFF=YES',
+        '--co', 'COPY_SRC_OVERVIEWS=YES',
+        '--co', 'TILED=YES',
+        '--co', 'BLOCKXSIZE=256',
+        '--co', 'BLOCKYSIZE=256',
+        '--overwrite'
+    ], check=True)
+        
 
 ##########
 
