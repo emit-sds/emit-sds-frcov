@@ -10,17 +10,16 @@ import subprocess
 from mosaic import apply_glt
 from spec_io import load_data, write_cog, open_tif
 
-# TODO - clip to EMIT tile extent or convert to NaN outside tile extent 
 
 ### 
 @click.command()
-@click.argument('fid', type=str, required=True)
-@click.argument('input_loc', type=click.Path(exists=True), default="/store/emit/ops/data/acquisitions/")
-@click.argument('output_loc', type=click.Path(exists=True), default="/home/colemanr/Unmixing/outputs/")
-@click.argument('urban_data_loc', type=click.Path(exists=True), default="/store/shared/landcover/complete_landcover.vrt")
-@click.argument('coastal_data_loc', type=click.Path(exists=True), default="/home/colemanr/Unmixing/coastal_mask/GSHHS_f_L1.shp")
-@click.argument('json_file_loc', type=click.Path(exists=True), default="/store/brodrick/emit/emit-visuals/track_coverage_pub.json")
-@click.argument('glt_nodata_value', type=int, default = 0)
+@click.option('--fid', type=str, required=True)
+@click.option('--input_loc', type=click.Path(exists=True), default="/store/emit/ops/data/acquisitions/")
+@click.option('--output_loc', type=click.Path(exists=True), default="/home/colemanr/Unmixing/outputs/")
+@click.option('--urban_data_loc', type=click.Path(exists=True), default="/store/shared/landcover/complete_landcover.vrt")
+@click.option('--coastal_data_loc', type=click.Path(exists=True), default="/store/shared/landcover/GSHHS_f_L1.shp")
+@click.option('--json_file_loc', type=click.Path(exists=True), default="/store/brodrick/emit/emit-visuals/track_coverage_pub.json")
+@click.option('--glt_nodata_value', type=int, default = 0)
 def process_files(fid, input_loc, output_loc, urban_data_loc, coastal_data_loc, json_file_loc, glt_nodata_value):
     """
     Generate QC product for EMIT fractional cover 
@@ -98,10 +97,10 @@ def process_files(fid, input_loc, output_loc, urban_data_loc, coastal_data_loc, 
 
     ## Clean up and remove intermediary files
     os.remove(ndsi_file)
-    os.remove(ndsi_ortho_file)
-    os.remove(ortho_mask_file)
-    os.remove(coastal_out_file)
-    os.remove(urban_out_file)
+    # os.remove(ndsi_ortho_file)
+    # os.remove(ortho_mask_file)
+    # os.remove(coastal_out_file)
+    # os.remove(urban_out_file)
     os.remove(json_filename)
 
 #### 
@@ -139,7 +138,7 @@ def singleband_raster_hierarchy(cloud, cirrus, water, urban, snow_ice, coastal, 
     result[(snow_ice == 1) & (result == 0)] = 4
 
     result = result.reshape((result.shape[0], result.shape[1], 1))
-    write_cog(out_file, result, meta, nodata_value=0) # nodata value of 0 b/c of np array initialization
+    write_cog(out_file, result, meta)
 
 def warp_array_to_ref(array, source_ds, ref_path, nodata_value=0):
     """
@@ -160,7 +159,7 @@ def warp_array_to_ref(array, source_ds, ref_path, nodata_value=0):
         raise FileNotFoundError(f"Could not open {ref_path}")
 
     # Save in memory
-    mem_ds = gdal.GetDriverByName("MEM").Create('', source_ds.RasterXSize, source_ds.RasterYSize, 1, gdal.GDT_Byte)
+    mem_ds = gdal.GetDriverByName("MEM").Create('', source_ds.RasterXSize, source_ds.RasterYSize, 1, gdal.GDT_UInt16)
     mem_ds.SetGeoTransform(source_ds.GetGeoTransform())
     mem_ds.SetProjection(source_ds.GetProjection())
     mem_ds.GetRasterBand(1).WriteArray(array[:, :, 0])
@@ -232,7 +231,7 @@ def urban_mask_cog(ortho_file, out_file, json_file, urban_data, ref_path, output
     result = result.reshape((result.shape[0], result.shape[1], 1))
 
     # Align to ref_path (EMIT mask file) and write to COG
-    result_warp = warp_array_to_ref(result, ds, ref_path)
+    result_warp = warp_array_to_ref(result, ds, ref_path,)
     write_cog(out_file, result_warp, meta)
 
     os.remove(temp_file)
