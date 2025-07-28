@@ -10,12 +10,13 @@ import subprocess
 from mosaic import apply_glt
 from spec_io import load_data, write_cog, open_tif
 
+## TODO- add check to see if ouput_loc exists 
 
 ### 
 @click.command()
+@click.option('--output_loc', type=click.Path(exists=True), required=True)
 @click.option('--fid', type=str, required=True)
 @click.option('--input_loc', type=click.Path(exists=True), default="/store/emit/ops/data/acquisitions/")
-@click.option('--output_loc', type=click.Path(exists=True), default="/home/colemanr/Unmixing/outputs/")
 @click.option('--urban_data_loc', type=click.Path(exists=True), default="/store/shared/landcover/complete_landcover.vrt")
 @click.option('--coastal_data_loc', type=click.Path(exists=True), default="/store/shared/landcover/GSHHS_f_L1.shp")
 @click.option('--json_file_loc', type=click.Path(exists=True), default="/store/brodrick/emit/emit-visuals/track_coverage_pub.json")
@@ -46,7 +47,7 @@ def process_files(fid, input_loc, output_loc, urban_data_loc, coastal_data_loc, 
     for feature in coverage["features"]:
         if feature["properties"].get("fid") == fid:
             geojson_str = json.dumps(feature["geometry"])
-    json_filename = os.path.join(output_loc, 'json_tile', fid + '_extent.json')
+    json_filename = os.path.join(output_loc, fid + '_extent.json')
     geojson_str_to_feature_file(geojson_str, fid, json_filename)
 
     # Get file names
@@ -60,23 +61,23 @@ def process_files(fid, input_loc, output_loc, urban_data_loc, coastal_data_loc, 
     ############ Generate QC and save to COG ############
 
     # Orthorectify EMIT mask file 
-    ortho_mask_file = os.path.join(output_loc, 'masks', fid + '_ortho_mask.tif')
+    ortho_mask_file = os.path.join(output_loc, fid + '_ortho_mask.tif')
     apply_glt.main([glt_file, mask_file, ortho_mask_file, '--glt_nodata_value', glt_nodata_value], standalone_mode=False)
 
     # Urban mask and orth
-    urban_out_file = os.path.join(output_loc, 'masks', fid + '_ortho_urban.tif')
+    urban_out_file = os.path.join(output_loc, fid + '_ortho_urban.tif')
     ref_path = ortho_mask_file
     meta = urban_mask_cog(ortho_mask_file, urban_out_file, json_filename, urban_data_loc, ref_path)
 
     # Coastal mask and ortho
-    coastal_out_file = os.path.join(output_loc, 'masks', fid + '_ortho_coastal.tif')
+    coastal_out_file = os.path.join(output_loc, fid + '_ortho_coastal.tif')
     coastal_mask_cog(json_filename, coastal_out_file, coastal_data_loc, meta, ref_path)
     
     # NDSI (generate and then ortho)
-    ndsi_file = os.path.join(output_loc, 'masks', fid + '_ndsi.tif')
+    ndsi_file = os.path.join(output_loc, fid + '_ndsi.tif')
     ndsi(rfl_file, ndsi_file)
 
-    ndsi_ortho_file = os.path.join(output_loc, 'masks', fid + '_ortho_ndsi.tif')
+    ndsi_ortho_file = os.path.join(output_loc, fid + '_ortho_ndsi.tif')
     apply_glt.main([glt_file, ndsi_file, ndsi_ortho_file, '--glt_nodata_value', glt_nodata_value], standalone_mode=False)
 
     ## Convert to singleband COG 
@@ -90,17 +91,17 @@ def process_files(fid, input_loc, output_loc, urban_data_loc, coastal_data_loc, 
     emit_water = emit_mask[:,:,2]
 
     ## Convert to singleband 
-    single_band_stack = os.path.join(output_loc, 'masks', fid + '_ortho_hierarchy.tif')
+    single_band_stack = os.path.join(output_loc, fid + '_ortho_hierarchy.tif')
     singleband_raster_hierarchy(emit_cloud, emit_cirrus, emit_water, 
                                 urban_mask[:,:,0], ndsi_mask[:,:,0], coastal_mask[:,:,0], 
                                 single_band_stack, emit_meta)
 
     ## Clean up and remove intermediary files
     os.remove(ndsi_file)
-    # os.remove(ndsi_ortho_file)
-    # os.remove(ortho_mask_file)
-    # os.remove(coastal_out_file)
-    # os.remove(urban_out_file)
+    os.remove(ndsi_ortho_file)
+    os.remove(ortho_mask_file)
+    os.remove(coastal_out_file)
+    os.remove(urban_out_file)
     os.remove(json_filename)
 
 #### 
