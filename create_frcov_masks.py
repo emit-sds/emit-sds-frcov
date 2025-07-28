@@ -10,7 +10,7 @@ import subprocess
 from mosaic import apply_glt
 from spec_io import load_data, write_cog, open_tif
 
-# TODO - fix bug with coastal band (hawaii and yucatan case)
+# TODO - clip to EMIT tile extent or convert to NaN outside tile extent 
 
 ### 
 @click.command()
@@ -103,7 +103,6 @@ def process_files(fid, input_loc, output_loc, urban_data_loc, coastal_data_loc, 
     os.remove(coastal_out_file)
     os.remove(urban_out_file)
     os.remove(json_filename)
-
 
 #### 
 def singleband_raster_hierarchy(cloud, cirrus, water, urban, snow_ice, coastal, out_file, meta):
@@ -265,19 +264,21 @@ def coastal_mask_cog(json_file, out_file, coastal_data, meta, ref_path, output_r
         )
     )
 
-    # Get extent from shapefile for new raster 
-    shp_ds = ogr.Open("temp.shp")
-    layer = shp_ds.GetLayer()   
-    minx, maxx, miny, maxy = layer.GetExtent()
+    # Get extent from json 
+    json_ds = ogr.Open(json_file)
+    json_layer = json_ds.GetLayer()
+    minx, maxx, miny, maxy = json_layer.GetExtent()
     x_res = int((maxx - minx) / output_res)
     y_res = int((maxy - miny) / output_res)
-
+    
     # Create in-memory raster
     mem_ds = gdal.GetDriverByName("MEM").Create("", x_res, y_res, 1, gdal.GDT_Byte)
     geotransform = (minx, output_res, 0, maxy, 0, -output_res)
     mem_ds.SetGeoTransform(geotransform)
 
     # Set projection from shapefile
+    shp_ds = ogr.Open("temp.shp")
+    layer = shp_ds.GetLayer()   
     srs = layer.GetSpatialRef()
     if srs:
         mem_ds.SetProjection(srs.ExportToWkt())
