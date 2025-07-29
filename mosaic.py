@@ -6,13 +6,14 @@ from scipy.signal import convolve2d
 
 import time
 import spec_io
-from osgeo import osr, gdal, ogr 
+from osgeo import osr
 import pyproj
 import logging
 from tqdm import tqdm
 from copy import deepcopy
 osr.UseExceptions()
-    
+
+
 def remove_negatives(glt, clean_contiguous=False, clean_interpolated=False):
     """
     Remove the negative values from the GLT.
@@ -395,7 +396,7 @@ def apply_glt(glt_file, raw_files, output_file, nodata_value, bands, output_form
     if glt_nodata_value is not None:
         glt_meta.nodata_value = glt_nodata_value
     glt = glt.astype(np.int32) # make sure we're not in legacy uint format
-    glt_nonblank = glt[...,0] != glt_meta.nodata_value
+    mask = glt[...,0] == glt_meta.nodata_value
     glt[...,:2] = np.abs(glt[...,:2])
     if glt_meta.nodata_value == 0:
         glt[...,:3] -= 1
@@ -406,6 +407,7 @@ def apply_glt(glt_file, raw_files, output_file, nodata_value, bands, output_form
         input_files = [raw_files]
         if glt.shape[-1] == 2:
             glt = np.append(glt, np.zeros((glt.shape[0],glt.shape[1],1),dtype=np.int32),axis=2)
+        glt[mask,-1] = -1
 
     outdata = None
     for _file, file in enumerate(tqdm(input_files, ncols=80, desc="Apply GLT, File:", unit="files")):
