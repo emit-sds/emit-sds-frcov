@@ -10,12 +10,10 @@ import subprocess
 from mosaic import apply_glt
 from spec_io import load_data, write_cog, open_tif
 
-## TODO- add check to see if ouput_loc exists 
-
 ### 
 @click.command()
-@click.option('--output_loc', type=click.Path(exists=True), required=True)
-@click.option('--fid', type=str, required=True)
+@click.argument('fid', type=str, required=True)
+@click.argument('output_loc', type=str, required=True)
 @click.option('--input_loc', type=click.Path(exists=True), default="/store/emit/ops/data/acquisitions/")
 @click.option('--urban_data_loc', type=click.Path(exists=True), default="/store/shared/landcover/complete_landcover.vrt")
 @click.option('--coastal_data_loc', type=click.Path(exists=True), default="/store/shared/landcover/GSHHS_f_L1.shp")
@@ -40,6 +38,11 @@ def process_files(fid, input_loc, output_loc, urban_data_loc, coastal_data_loc, 
         json_file_loc (path str): path to EMIT info json file 
         glt_nodata_value (int): defaults to 0 (nodata for .envi files) 
     """
+
+    # Check to see if output_loc exists, if not mkdir
+    if not os.path.exists(output_loc):
+        os.makedirs(output_loc)
+        print(f"Directory '{output_loc}' created.")
 
     # Write specific fid to geojson string
     with open(json_file_loc) as json_data:
