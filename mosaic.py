@@ -371,6 +371,64 @@ def build_obs_nc(output_file, input_file_list, ignore_file_list, x_resolution, y
 
     spec_io.write_cog(output_file, glt, meta, nodata_value=0)
 
+def apply_glt_noClick(glt_file, raw_files, output_file, nodata_value=-9999, bands=None, output_format='tif', glt_nodata_value=None):
+    """
+    Apply the GLT to the input files without Click wrapper 
+
+    Args:
+        glt_file (str): Path to the GLT file.
+        raw_files (str): Path to the raw files.
+        output_file (str): Path to the output file.
+        nodata_value (float): Nodata value for the output.
+        bands (int): Bands to use for the output (None = all)
+        glt_nodata_value (int): Override the nodata value in the GLT file; used to support legacy files only, generally should be ignored
+    """
+    glt_meta, glt = spec_io.load_data(glt_file, lazy=False)
+    if glt_nodata_value is not None:
+        glt_meta.nodata_value = glt_nodata_value
+    glt = glt.astype(np.int32) # make sure we're not in legacy uint format
+    mask = glt[...,0] == glt_meta.nodata_value
+    glt[...,:2] = np.abs(glt[...,:2])
+    if glt_meta.nodata_value == 0:
+        glt[...,:3] -= 1
+
+    if raw_files.endswith(".txt"):
+        input_files = open(raw_files, 'r').readlines()
+    else:
+        input_files = [raw_files]
+        if glt.shape[-1] == 2:
+            glt = np.append(glt, np.zeros((glt.shape[0],glt.shape[1],1),dtype=np.int32),axis=2)
+        glt[mask,-1] = -1
+
+    outdata = None
+    for _file, file in enumerate(tqdm(input_files, ncols=80, desc="Apply GLT, File:", unit="files")):
+        if np.any(glt[...,2] == _file):
+            valid_glt = glt[...,2] == _file
+
+            meta, dat = spec_io.load_data(file.strip(), lazy=True, load_glt=False)
+            if bands is None or len(bands) == 0:
+                bands = np.arange(dat.shape[2])
+            dat = dat[...,bands]
+
+            if outdata is None:
+                outdata = np.zeros((glt.shape[0], glt.shape[1], dat.shape[2]), dtype=dat.dtype) + nodata_value
+
+            outdata[valid_glt, :] = dat[glt[valid_glt, 1], glt[valid_glt, 0], :]
+
+    if outdata is not None:
+        logging.info(f'Writing: {output_file}')
+        output_meta = deepcopy(meta)
+        output_meta.projection = glt_meta.projection
+        output_meta.geotransform = glt_meta.geotransform
+        if output_format == 'tif':
+            spec_io.write_cog(output_file, outdata, output_meta, nodata_value=nodata_value)
+        elif output_format == 'envi':
+            spec_io.create_envi_file(output_file, outdata.shape, output_meta, outdata.dtype)
+            spec_io.write_bil_chunk(outdata.transpose((0,2,1)), output_file, 0, (glt.shape[0], outdata.shape[-1], glt.shape[1]) )
+        else:
+            logging.error('Unsupported output file time')
+    else:
+        logging.info('No data found; skipping output file write')
 
 @click.command()
 @click.argument('glt_file', type=click.Path(exists=True))

@@ -7,7 +7,7 @@ import numpy as np
 
 import subprocess
 
-from mosaic import apply_glt
+from mosaic import apply_glt, apply_glt_noClick
 from spec_io import load_data, write_cog, open_tif
 
 ### 
@@ -65,8 +65,9 @@ def process_files(fid, input_loc, output_loc, urban_data_loc, coastal_data_loc, 
 
     # Orthorectify EMIT mask file 
     ortho_mask_file = os.path.join(output_loc, fid + '_ortho_mask.tif')
-    apply_glt.main([glt_file, mask_file, ortho_mask_file, '--glt_nodata_value', glt_nodata_value], standalone_mode=False)
-
+    # apply_glt.callback(glt_file, mask_file, ortho_mask_file, nodata_value=-9999, bands=None, output_format='tif', glt_nodata_value=glt_nodata_value)
+    apply_glt_noClick(glt_file, mask_file, ortho_mask_file, nodata_value=-9999, bands=None, output_format='tif', glt_nodata_value=glt_nodata_value)
+    
     # Urban mask and orth
     urban_out_file = os.path.join(output_loc, fid + '_ortho_urban.tif')
     ref_path = ortho_mask_file
@@ -81,7 +82,8 @@ def process_files(fid, input_loc, output_loc, urban_data_loc, coastal_data_loc, 
     ndsi(rfl_file, ndsi_file)
 
     ndsi_ortho_file = os.path.join(output_loc, fid + '_ortho_ndsi.tif')
-    apply_glt.main([glt_file, ndsi_file, ndsi_ortho_file, '--glt_nodata_value', glt_nodata_value], standalone_mode=False)
+    # apply_glt.callback(glt_file, ndsi_file, ndsi_ortho_file, nodata_value=-9999, bands=None, output_format='tif', glt_nodata_value=glt_nodata_value)
+    apply_glt_noClick(glt_file, ndsi_file, ndsi_ortho_file, nodata_value=-9999, bands=None, output_format='tif', glt_nodata_value=glt_nodata_value)
 
     ## Convert to singleband COG 
     _, urban_mask = open_tif(urban_out_file)
@@ -213,9 +215,9 @@ def urban_mask_cog(ortho_file, out_file, json_file, urban_data, ref_path, output
         raise FileNotFoundError(f"Could not open {ortho_file}")
     wkt = ds.GetProjection()
     ds = None
-    temp_file = "clipped.tif"
 
     # Build warp options
+    temp_file= os.path.join(os.path.dirname(out_file), os.path.splitext(os.path.basename(out_file))[0]) + '_TEMPclipped.tif'
     warp_options = gdal.WarpOptions(
         cutlineDSName=json_file,
         cropToCutline=True,
@@ -258,8 +260,9 @@ def coastal_mask_cog(json_file, out_file, coastal_data, meta, ref_path, output_r
     print(f"Running Coastal Masking on {json_file}")
 
     # Clip large coastal shapefile to EMIT extent (too slow) 
+    temp_shapefile = os.path.join(os.path.dirname(out_file), os.path.splitext(os.path.basename(out_file))[0]) + "_temp.shp"
     gdal.VectorTranslate(
-        "temp.shp",                              # Output file
+        temp_shapefile,                              # Output file
         coastal_data,                            # Input file (coastal data)
         options=gdal.VectorTranslateOptions(
             format="ESRI Shapefile",
@@ -280,7 +283,7 @@ def coastal_mask_cog(json_file, out_file, coastal_data, meta, ref_path, output_r
     mem_ds.SetGeoTransform(geotransform)
 
     # Set projection from shapefile
-    shp_ds = ogr.Open("temp.shp")
+    shp_ds = ogr.Open(temp_shapefile)
     layer = shp_ds.GetLayer()   
     srs = layer.GetSpatialRef()
     if srs:
@@ -305,7 +308,7 @@ def coastal_mask_cog(json_file, out_file, coastal_data, meta, ref_path, output_r
     mem_ds = None
     for ext in [".shp", ".shx", ".dbf", ".prj"]:
         try:
-            os.remove(f"temp{ext}")
+            os.remove(f"{temp_shapefile[:-len(ext)]}{ext}")
         except FileNotFoundError:
             pass
 
