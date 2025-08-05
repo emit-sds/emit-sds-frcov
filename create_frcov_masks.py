@@ -74,8 +74,7 @@ def process_files(fid, input_loc, output_loc, urban_data_loc, coastal_data_loc, 
 
     # Coastal mask and ortho
     coastal_out_file = os.path.join(output_loc, fid + '_ortho_coastal.tif')
-    # coastal_mask_cog(json_filename, coastal_out_file, coastal_data_loc, meta, ref_path)
-    coastal_mask_cog_memory(json_filename, coastal_out_file, coastal_data_loc, meta)
+    coastal_mask_cog(json_filename, coastal_out_file, coastal_data_loc, meta)
     
     # NDSI (generate and then ortho)
     ndsi_file = os.path.join(output_loc, fid + '_ndsi.tif')
