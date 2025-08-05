@@ -6,9 +6,12 @@ from osgeo import gdal, ogr
 import numpy as np
 
 import subprocess
+import rasterio
+from shapely.geometry import box, mapping
 
 from mosaic import apply_glt, apply_glt_noClick
 from spec_io import load_data, write_cog, open_tif
+
 
 ### 
 @click.command()
@@ -44,15 +47,6 @@ def process_files(fid, input_loc, output_loc, urban_data_loc, coastal_data_loc, 
         os.makedirs(output_loc)
         print(f"Directory '{output_loc}' created.")
 
-    # Write specific fid to geojson string
-    with open(json_file_loc) as json_data:
-        coverage = json.load(json_data)
-    for feature in coverage["features"]:
-        if feature["properties"].get("fid") == fid:
-            geojson_str = json.dumps(feature["geometry"])
-    json_filename = os.path.join(output_loc, fid + '_extent.json')
-    geojson_str_to_feature_file(geojson_str, fid, json_filename)
-
     # Get file names
     try: 
         rfl_file = glob.glob(os.path.join(input_loc, fid[4:12], fid.split('_')[0], "l2a", "*l2a_rfl_*.hdr"))[0]
@@ -65,9 +59,12 @@ def process_files(fid, input_loc, output_loc, urban_data_loc, coastal_data_loc, 
 
     # Orthorectify EMIT mask file 
     ortho_mask_file = os.path.join(output_loc, fid + '_ortho_mask.tif')
-    # apply_glt.callback(glt_file, mask_file, ortho_mask_file, nodata_value=-9999, bands=None, output_format='tif', glt_nodata_value=glt_nodata_value)
     apply_glt_noClick(glt_file, mask_file, ortho_mask_file, nodata_value=-9999, bands=None, output_format='tif', glt_nodata_value=glt_nodata_value)
-    
+
+    # Write ortho'ed extent to json file 
+    json_filename = os.path.join(output_loc, fid + '_extent.json')
+    geotiff_extent_to_geojson(ortho_mask_file, json_filename)
+
     # Urban mask and orth
     urban_out_file = os.path.join(output_loc, fid + '_ortho_urban.tif')
     ref_path = ortho_mask_file
@@ -82,7 +79,6 @@ def process_files(fid, input_loc, output_loc, urban_data_loc, coastal_data_loc, 
     ndsi(rfl_file, ndsi_file)
 
     ndsi_ortho_file = os.path.join(output_loc, fid + '_ortho_ndsi.tif')
-    # apply_glt.callback(glt_file, ndsi_file, ndsi_ortho_file, nodata_value=-9999, bands=None, output_format='tif', glt_nodata_value=glt_nodata_value)
     apply_glt_noClick(glt_file, ndsi_file, ndsi_ortho_file, nodata_value=-9999, bands=None, output_format='tif', glt_nodata_value=glt_nodata_value)
 
     ## Convert to singleband COG 
@@ -110,6 +106,41 @@ def process_files(fid, input_loc, output_loc, urban_data_loc, coastal_data_loc, 
     os.remove(json_filename)
 
 #### 
+def geotiff_extent_to_geojson(tiff_path, geojson_path):
+    """
+    Extracts the extent of a GeoTIFF file and saves it as a GeoJSON file.
+    
+    Args:
+        tiff_path (str): Path to the input GeoTIFF file.
+        geojson_path (str): Path to the output GeoJSON file.
+    """
+    with rasterio.open(tiff_path) as src:
+        bounds = src.bounds
+        crs = src.crs  
+        extent_geom = box(bounds.left, bounds.bottom, bounds.right, bounds.top)
+
+        geojson_feature = {
+            "type": "Feature",
+            "geometry": mapping(extent_geom),
+            "properties": {},
+        }
+
+        geojson_dict = {
+            "type": "FeatureCollection",
+            "features": [geojson_feature],
+            "crs": {
+                "type": "name",
+                "properties": {
+                    "name": crs.to_string()
+                }
+            }
+        }
+
+    # Write GeoJSON to file
+    with open(geojson_path, 'w') as f:
+        json.dump(geojson_dict, f, indent=2)
+
+
 def singleband_raster_hierarchy(cloud, cirrus, water, urban, snow_ice, coastal, out_file, meta):
     """
     Condense multiple row x col arrays into a single band COG with a hierarchical classification process
@@ -343,32 +374,6 @@ def ndsi(input_file, output_file, green_wl = 560, swir_wl = 1600, green_width = 
 
     write_cog(output_file, ndsi, meta, ortho=ortho)
 
-def geojson_str_to_feature_file(geojson_str, fid, output_filename):
-    """
-    Convert a GeoJSON geometry string to save as a json
-
-    Args:
-        geojson_str (str): geojson string describing EMIT tile extent
-        fid (str): EMIT fid
-        output_filename (str): output json file 
-    """
-    geometry = json.loads(geojson_str)
-    
-    feature = {
-        "type": "Feature",
-        "geometry": geometry,
-        "properties": {
-            "FID": fid
-        }
-    }
-
-    feature_collection = {
-        "type": "FeatureCollection",
-        "features": [feature]
-    }
-
-    with open(output_filename, 'w') as f:
-        json.dump(feature_collection, f, indent=2)
 
 ## NOT CURRENTLY USED 
 def singleband_raster_unique(raster_stack, out_file): 
