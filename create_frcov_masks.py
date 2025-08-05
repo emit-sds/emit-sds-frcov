@@ -8,6 +8,9 @@ import numpy as np
 import subprocess
 import rasterio
 from shapely.geometry import box, mapping
+import geopandas as gpd
+from rasterio.features import rasterize
+from affine import Affine
 
 from mosaic import apply_glt, apply_glt_noClick
 from spec_io import load_data, write_cog, open_tif
@@ -20,9 +23,8 @@ from spec_io import load_data, write_cog, open_tif
 @click.option('--input_loc', type=click.Path(exists=True), default="/store/emit/ops/data/acquisitions/")
 @click.option('--urban_data_loc', type=click.Path(exists=True), default="/store/shared/landcover/complete_landcover.vrt")
 @click.option('--coastal_data_loc', type=click.Path(exists=True), default="/store/shared/landcover/GSHHS_f_L1.shp")
-@click.option('--json_file_loc', type=click.Path(exists=True), default="/store/brodrick/emit/emit-visuals/track_coverage_pub.json")
 @click.option('--glt_nodata_value', type=int, default = 0)
-def process_files(fid, input_loc, output_loc, urban_data_loc, coastal_data_loc, json_file_loc, glt_nodata_value):
+def process_files(fid, input_loc, output_loc, urban_data_loc, coastal_data_loc, glt_nodata_value):
     """
     Generate QC product for EMIT fractional cover 
 
@@ -72,7 +74,8 @@ def process_files(fid, input_loc, output_loc, urban_data_loc, coastal_data_loc, 
 
     # Coastal mask and ortho
     coastal_out_file = os.path.join(output_loc, fid + '_ortho_coastal.tif')
-    coastal_mask_cog(json_filename, coastal_out_file, coastal_data_loc, meta, ref_path)
+    # coastal_mask_cog(json_filename, coastal_out_file, coastal_data_loc, meta, ref_path)
+    coastal_mask_cog_memory(json_filename, coastal_out_file, coastal_data_loc, meta)
     
     # NDSI (generate and then ortho)
     ndsi_file = os.path.join(output_loc, fid + '_ndsi.tif')
@@ -274,8 +277,7 @@ def urban_mask_cog(ortho_file, out_file, json_file, urban_data, ref_path, output
     os.remove(temp_file)
     return meta 
 
-
-def coastal_mask_cog(json_file, out_file, coastal_data, meta, ref_path, output_res = 0.000542232520256): 
+def coastal_mask_cog(json_file, out_file, coastal_data, meta, output_res = 0.000542232520256): 
     """
     Generate mask of coastal water features and save as COG
     
@@ -284,64 +286,30 @@ def coastal_mask_cog(json_file, out_file, coastal_data, meta, ref_path, output_r
         out_file (str): path to save coastal area COG
         coastal_data (str): path to GSHHS coastal dataset (.shp)
         meta (GenericGeoMetadata):  An object containing the wavelengths and FWHM.
-        ref_path (str): path to reference tif to align data with
         output_res (float): default to EMIT res 
     """
 
     print(f"Running Coastal Masking on {json_file}")
 
-    # Clip large coastal shapefile to EMIT extent (too slow) 
-    temp_shapefile = os.path.join(os.path.dirname(out_file), os.path.splitext(os.path.basename(out_file))[0]) + "_temp.shp"
-    gdal.VectorTranslate(
-        temp_shapefile,                              # Output file
-        coastal_data,                            # Input file (coastal data)
-        options=gdal.VectorTranslateOptions(
-            format="ESRI Shapefile",
-            clipSrc=json_file                    # Clip to tile extent 
-        )
-    )
+    # Clip large coastal data to tile extent
+    tile_extent = gpd.read_file(json_file)
+    coastal = gpd.read_file(coastal_data)
+    clipped = gpd.overlay(coastal, tile_extent, how="intersection")
+    if clipped.empty:
+        raise ValueError("No coastal features intersect the tile extent.")
 
-    # Get extent from json 
-    json_ds = ogr.Open(json_file)
-    json_layer = json_ds.GetLayer()
-    minx, maxx, miny, maxy = json_layer.GetExtent()
-    x_res = int((maxx - minx) / output_res)
-    y_res = int((maxy - miny) / output_res)
-    
-    # Create in-memory raster
-    mem_ds = gdal.GetDriverByName("MEM").Create("", x_res, y_res, 1, gdal.GDT_Byte)
-    geotransform = (minx, output_res, 0, maxy, 0, -output_res)
-    mem_ds.SetGeoTransform(geotransform)
+    # Get extent from json
+    minx, miny, maxx, maxy = tile_extent.total_bounds
+    width, height = int((maxx - minx) / output_res), int((maxy - miny) / output_res)
+    transform = Affine.translation(minx, maxy) * Affine.scale(output_res, -output_res)
 
-    # Set projection from shapefile
-    shp_ds = ogr.Open(temp_shapefile)
-    layer = shp_ds.GetLayer()   
-    srs = layer.GetSpatialRef()
-    if srs:
-        mem_ds.SetProjection(srs.ExportToWkt())
-    else:
-        raise ValueError("Shapefile has no spatial reference.")
+    # Rasterize: land = 1, coast = 0
+    shapes = [(geom, 0) for geom in clipped.geometry if not geom.is_empty]
+    raster = rasterize(shapes, (height, width), transform=transform, fill=1, dtype=np.uint8)
 
-    # Initialize with land (1), then burn coastal (0)
-    mem_ds.GetRasterBand(1).Fill(1)
-    gdal.RasterizeLayer(mem_ds, [1], layer, burn_values=[0], options=["INVERT=FALSE"])
-
-    # Read result as NumPy array
-    result = mem_ds.GetRasterBand(1).ReadAsArray()
-    result = result.reshape((result.shape[0], result.shape[1], 1))
-
-    # Align to ref_path (EMIT mask file) and write to COG
-    result_warp = warp_array_to_ref(result, mem_ds, ref_path) 
-    write_cog(out_file, result_warp, meta)
-
-    # Clean up temp files
-    shp_ds = None
-    mem_ds = None
-    for ext in [".shp", ".shx", ".dbf", ".prj"]:
-        try:
-            os.remove(f"{temp_shapefile[:-len(ext)]}{ext}")
-        except FileNotFoundError:
-            pass
+    # Write coastal to COG 
+    result = raster.reshape((height, width, 1))
+    write_cog(out_file, result, meta)
 
 
 def ndsi(input_file, output_file, green_wl = 560, swir_wl = 1600, green_width = 0, swir_width = 0, threshold = 0.4, ortho=True):
