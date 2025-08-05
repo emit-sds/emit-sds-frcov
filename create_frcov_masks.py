@@ -2,19 +2,16 @@ import json
 import click
 import glob
 import os 
-from osgeo import gdal, ogr 
+from osgeo import gdal, ogr, osr 
 import numpy as np
 
 import subprocess
-import rasterio
-from shapely.geometry import box, mapping
 import geopandas as gpd
 from rasterio.features import rasterize
 from affine import Affine
 
-from mosaic import apply_glt, apply_glt_noClick
+from mosaic import apply_glt_noClick
 from spec_io import load_data, write_cog, open_tif
-
 
 ### 
 @click.command()
@@ -108,6 +105,7 @@ def process_files(fid, input_loc, output_loc, urban_data_loc, coastal_data_loc, 
     os.remove(json_filename)
 
 #### 
+
 def geotiff_extent_to_geojson(tiff_path, geojson_path):
     """
     Extracts the extent of a GeoTIFF file and saves it as a GeoJSON file.
@@ -115,33 +113,41 @@ def geotiff_extent_to_geojson(tiff_path, geojson_path):
     Args:
         tiff_path (str): Path to the input GeoTIFF file.
         geojson_path (str): Path to the output GeoJSON file.
-    """
-    with rasterio.open(tiff_path) as src:
-        bounds = src.bounds
-        crs = src.crs  
-        extent_geom = box(bounds.left, bounds.bottom, bounds.right, bounds.top)
+    """ 
 
-        geojson_feature = {
+    # Open raster and get band
+    ds = gdal.Open(tiff_path)
+    band = ds.GetRasterBand(1)
+
+   # Create in-memory vector layer
+    drv = ogr.GetDriverByName("Memory")
+    mem_ds = drv.CreateDataSource("mem")
+    srs = osr.SpatialReference()
+    srs.ImportFromWkt(ds.GetProjection())
+    layer = mem_ds.CreateLayer("footprint", srs=srs, geom_type=ogr.wkbPolygon)
+
+    # Polygonize the valid data mask + get union of geometries
+    gdal.Polygonize(band, band.GetMaskBand(), layer, -1, [])
+    geom_union = None
+    for feat in layer:
+        geom = feat.GetGeometryRef().Clone()
+        if geom_union is None:
+            geom_union = geom
+        else:
+            geom_union = geom_union.Union(geom)
+
+    geojson = {
+        "type": "FeatureCollection",
+        "features": [{
             "type": "Feature",
-            "geometry": mapping(extent_geom),
-            "properties": {},
-        }
-
-        geojson_dict = {
-            "type": "FeatureCollection",
-            "features": [geojson_feature],
-            "crs": {
-                "type": "name",
-                "properties": {
-                    "name": crs.to_string()
-                }
-            }
-        }
-
+            "geometry": json.loads(geom_union.ExportToJson()),
+            "properties": {}
+        }]
+    }
+    
     # Write GeoJSON to file
     with open(geojson_path, 'w') as f:
-        json.dump(geojson_dict, f, indent=2)
-
+        json.dump(geojson, f, indent=2)
 
 def singleband_raster_hierarchy(cloud, cirrus, water, urban, snow_ice, coastal, out_file, meta):
     """
@@ -302,11 +308,26 @@ def coastal_mask_cog(json_file, out_file, coastal_data, meta, output_res = 0.000
     width, height = int((maxx - minx) / output_res), int((maxy - miny) / output_res)
     transform = Affine.translation(minx, maxy) * Affine.scale(output_res, -output_res)
 
-    # Rasterize: land = 1, coast = 0
-    shapes = [(geom, 0) for geom in clipped.geometry if not geom.is_empty]
-    raster = rasterize(shapes, (height, width), transform=transform, fill=1, dtype=np.uint8)
+    # Mask for inside EMIT tile = 1, outside tile = 0 --> needed to prevent classification as water in corners
+    tile_mask = rasterize(
+        [(geom, 1) for geom in tile_extent.geometry if not geom.is_empty],
+        out_shape=(height, width),
+        transform=transform,
+        fill=0,
+        dtype=np.uint8
+    )
 
-    # Write coastal to COG 
+    # Land = 1, Coastal = 0 
+    coastal_raster = rasterize(
+        [(geom, 0) for geom in clipped.geometry if not geom.is_empty],
+        out_shape=(height, width),
+        transform=transform,
+        fill=1, 
+        dtype=np.uint8
+    )
+
+    # Write coastal mask to COG 
+    raster = coastal_raster * tile_mask
     result = raster.reshape((height, width, 1))
     write_cog(out_file, result, meta)
 
