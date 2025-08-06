@@ -7,11 +7,16 @@ import numpy as np
 
 import subprocess
 import geopandas as gpd
-from rasterio.features import rasterize
 from affine import Affine
+
+import rasterio
+from rasterio.features import shapes,rasterize
+from shapely.geometry import shape, mapping
+from shapely.ops import unary_union
 
 from mosaic import apply_glt_noClick
 from spec_io import load_data, write_cog, open_tif
+
 
 ### 
 @click.command()
@@ -106,7 +111,7 @@ def process_files(fid, input_loc, output_loc, urban_data_loc, coastal_data_loc, 
 
 #### 
 
-def geotiff_extent_to_geojson(tiff_path, geojson_path):
+def geotiff_extent_to_geojson(tiff_path, geojson_path, nodata_value=-9999):
     """
     Extracts the extent of a GeoTIFF file and saves it as a GeoJSON file.
     
@@ -115,39 +120,36 @@ def geotiff_extent_to_geojson(tiff_path, geojson_path):
         geojson_path (str): Path to the output GeoJSON file.
     """ 
 
-    # Open raster and get band
-    ds = gdal.Open(tiff_path)
-    band = ds.GetRasterBand(1)
+    # Open raster and get extent of valid data (ignore nodata)
+    with rasterio.open(tiff_path) as src:
+        band = src.read(1)
+        transform = src.transform
 
-   # Create in-memory vector layer
-    drv = ogr.GetDriverByName("Memory")
-    mem_ds = drv.CreateDataSource("mem")
-    srs = osr.SpatialReference()
-    srs.ImportFromWkt(ds.GetProjection())
-    layer = mem_ds.CreateLayer("footprint", srs=srs, geom_type=ogr.wkbPolygon)
+        valid_mask = (band != nodata_value)
+        if src.nodata is not None:
+            valid_mask &= (band != src.nodata)
+        if not np.any(valid_mask):
+            raise ValueError("Invalid mask: cannot generate GeoJSON")
 
-    # Polygonize the valid data mask + get union of geometries
-    gdal.Polygonize(band, band.GetMaskBand(), layer, -1, [])
-    geom_union = None
-    for feat in layer:
-        geom = feat.GetGeometryRef().Clone()
-        if geom_union is None:
-            geom_union = geom
-        else:
-            geom_union = geom_union.Union(geom)
+        # Generate and merge polygons of valid data extent (ignore nodata)
+        shapes_gen = shapes(band, mask=valid_mask, transform=transform)
+        polygons = [shape(geom) for geom, _ in shapes_gen]
+        if not polygons:
+            raise ValueError("Invalid mask: cannot generate GeoJSON")
+        merged_geom = unary_union(polygons)
 
-    geojson = {
-        "type": "FeatureCollection",
-        "features": [{
-            "type": "Feature",
-            "geometry": json.loads(geom_union.ExportToJson()),
-            "properties": {}
-        }]
-    }
-    
-    # Write GeoJSON to file
-    with open(geojson_path, 'w') as f:
-        json.dump(geojson, f, indent=2)
+        # Write GeoJSON to file
+        geojson_dict = {
+            "type": "FeatureCollection",
+            "features": [{
+                "type": "Feature",
+                "geometry": mapping(merged_geom),
+                "properties": {}
+            }]
+        }
+        with open(geojson_path, 'w') as f:
+            json.dump(geojson_dict, f, indent=2)    
+
 
 def singleband_raster_hierarchy(cloud, cirrus, water, urban, snow_ice, coastal, out_file, meta):
     """
@@ -300,34 +302,36 @@ def coastal_mask_cog(json_file, out_file, coastal_data, meta, output_res = 0.000
     tile_extent = gpd.read_file(json_file)
     coastal = gpd.read_file(coastal_data)
     clipped = gpd.overlay(coastal, tile_extent, how="intersection")
-    if clipped.empty:
-        raise ValueError("No coastal features intersect the tile extent.")
 
     # Get extent from json
     minx, miny, maxx, maxy = tile_extent.total_bounds
     width, height = int((maxx - minx) / output_res), int((maxy - miny) / output_res)
     transform = Affine.translation(minx, maxy) * Affine.scale(output_res, -output_res)
 
-    # Mask for inside EMIT tile = 1, outside tile = 0 --> needed to prevent classification as water in corners
-    tile_mask = rasterize(
-        [(geom, 1) for geom in tile_extent.geometry if not geom.is_empty],
-        out_shape=(height, width),
-        transform=transform,
-        fill=0,
-        dtype=np.uint8
-    )
-
-    # Land = 1, Coastal = 0 
-    coastal_raster = rasterize(
-        [(geom, 0) for geom in clipped.geometry if not geom.is_empty],
-        out_shape=(height, width),
-        transform=transform,
-        fill=1, 
-        dtype=np.uint8
-    )
+    if clipped.empty:  # No intersecting coastal features -- return mask of 0 
+        result = np.zeros((height, width), dtype=np.uint8)
+    
+    else:  
+        # Mask for inside EMIT tile = 1, outside tile = 0 --> needed to prevent classification as water in corners
+        tile_mask = rasterize(
+            [(geom, 1) for geom in tile_extent.geometry if not geom.is_empty],
+            out_shape=(height, width),
+            transform=transform,
+            fill=0,
+            dtype=np.uint8
+        )
+        
+        # Land = 0,  Water = 1 
+        coastal_raster = rasterize(
+            [(geom, 0) for geom in clipped.geometry if not geom.is_empty],
+            out_shape=(height, width),
+            transform=transform,
+            fill=1, 
+            dtype=np.uint8
+        )
+        raster = coastal_raster * tile_mask
 
     # Write coastal mask to COG 
-    raster = coastal_raster * tile_mask
     result = raster.reshape((height, width, 1))
     write_cog(out_file, result, meta)
 
