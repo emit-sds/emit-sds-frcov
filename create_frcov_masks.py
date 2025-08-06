@@ -309,7 +309,7 @@ def coastal_mask_cog(json_file, out_file, coastal_data, meta, output_res = 0.000
     transform = Affine.translation(minx, maxy) * Affine.scale(output_res, -output_res)
 
     if clipped.empty:  # No intersecting coastal features -- return mask of 0 
-        result = np.zeros((height, width), dtype=np.uint8)
+        raster = np.zeros((height, width), dtype=np.uint8)
     
     else:  
         # Mask for inside EMIT tile = 1, outside tile = 0 --> needed to prevent classification as water in corners
