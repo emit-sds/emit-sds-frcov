@@ -76,7 +76,7 @@ def process_files(fid, input_loc, output_loc, urban_data_loc, coastal_data_loc, 
 
     # Coastal mask and ortho
     coastal_out_file = os.path.join(output_loc, fid + '_ortho_coastal.tif')
-    coastal_mask_cog(json_filename, coastal_out_file, coastal_data_loc, meta)
+    coastal_mask_cog(ortho_mask_file, json_filename, coastal_out_file, coastal_data_loc, meta)
     
     # NDSI (generate and then ortho)
     ndsi_file = os.path.join(output_loc, fid + '_ndsi.tif')
@@ -113,42 +113,44 @@ def process_files(fid, input_loc, output_loc, urban_data_loc, coastal_data_loc, 
 
 def geotiff_extent_to_geojson(tiff_path, geojson_path, nodata_value=-9999):
     """
-    Extracts the extent of a GeoTIFF file and saves it as a GeoJSON file.
+    Extracts the bounding box of a GeoTIFF file and saves it as a GeoJSON file.
     
     Args:
         tiff_path (str): Path to the input GeoTIFF file.
         geojson_path (str): Path to the output GeoJSON file.
     """ 
 
-    # Open raster and get extent of valid data (ignore nodata)
+    # Open raster and get extent of valid data 
     with rasterio.open(tiff_path) as src:
-        band = src.read(1)
-        transform = src.transform
+        bounds = src.bounds
+        crs = src.crs
 
-        valid_mask = (band != nodata_value)
-        if src.nodata is not None:
-            valid_mask &= (band != src.nodata)
-        if not np.any(valid_mask):
-            raise ValueError("Invalid mask: cannot generate GeoJSON")
+    # Extract bounding box 
+    polygon = {
+        "type": "Polygon",
+        "coordinates": [[
+            [bounds.left, bounds.bottom],
+            [bounds.left, bounds.top],
+            [bounds.right, bounds.top],
+            [bounds.right, bounds.bottom],
+            [bounds.left, bounds.bottom]  # close the polygon
+        ]]
+    }
 
-        # Generate and merge polygons of valid data extent (ignore nodata)
-        shapes_gen = shapes(band, mask=valid_mask, transform=transform)
-        polygons = [shape(geom) for geom, _ in shapes_gen]
-        if not polygons:
-            raise ValueError("Invalid mask: cannot generate GeoJSON")
-        merged_geom = unary_union(polygons)
-
-        # Write GeoJSON to file
-        geojson_dict = {
-            "type": "FeatureCollection",
-            "features": [{
-                "type": "Feature",
-                "geometry": mapping(merged_geom),
-                "properties": {}
-            }]
+    # Write GeoJSON to file
+    feature = {
+        "type": "Feature",
+        "geometry": polygon,
+        "properties": {
+            "crs": str(crs)
         }
-        with open(geojson_path, 'w') as f:
-            json.dump(geojson_dict, f, indent=2)    
+    }
+    geojson = {
+        "type": "FeatureCollection",
+        "features": [feature]
+    }
+    with open(geojson_path, 'w') as f:
+            json.dump(geojson, f, indent=2)
 
 
 def singleband_raster_hierarchy(cloud, cirrus, water, urban, snow_ice, coastal, out_file, meta):
@@ -251,13 +253,12 @@ def urban_mask_cog(ortho_file, out_file, json_file, urban_data, ref_path, output
     print(f"Running Urban Masking on {json_file}")
 
     # Get SRS info from orthoed file 
-    ds = gdal.Open(ortho_file)
-    if ds is None:
+    ds_mask = gdal.Open(ortho_file)
+    if ds_mask is None:
         raise FileNotFoundError(f"Could not open {ortho_file}")
-    wkt = ds.GetProjection()
-    ds = None
+    wkt = ds_mask.GetProjection()
 
-    # Build warp options
+    # Build warp options -- coarse clipping to bounding box 
     temp_file= os.path.join(os.path.dirname(out_file), os.path.splitext(os.path.basename(out_file))[0]) + '_TEMPclipped.tif'
     warp_options = gdal.WarpOptions(
         cutlineDSName=json_file,
@@ -277,18 +278,24 @@ def urban_mask_cog(ortho_file, out_file, json_file, urban_data, ref_path, output
     result = np.logical_and(urban_array >= 0, urban_array == 50).astype(np.uint8)
     result = result.reshape((result.shape[0], result.shape[1], 1))
 
-    # Align to ref_path (EMIT mask file) and write to COG
-    result_warp = warp_array_to_ref(result, ds, ref_path,)
+    # Exact clipping to valid data points in EMIT data mask  
+    emit_mask = (ds_mask.GetRasterBand(1).ReadAsArray() != -9999)
+    emit_mask = emit_mask.reshape((emit_mask.shape[0], emit_mask.shape[1], 1))
+    result_clip = np.where(emit_mask, result, 0)
+    result_warp = warp_array_to_ref(result_clip, ds, ref_path)
+
+    # Write to COG
     write_cog(out_file, result_warp, meta)
 
     os.remove(temp_file)
     return meta 
 
-def coastal_mask_cog(json_file, out_file, coastal_data, meta, output_res = 0.000542232520256): 
+def coastal_mask_cog(ortho_file, json_file, out_file, coastal_data, meta, output_res = 0.000542232520256): 
     """
     Generate mask of coastal water features and save as COG
     
     Args:
+        ortho_file (str): path to orthorectified EMIT mask file 
         json_file (str): path to json of EMIT tile extent
         out_file (str): path to save coastal area COG
         coastal_data (str): path to GSHHS coastal dataset (.shp)
@@ -298,7 +305,7 @@ def coastal_mask_cog(json_file, out_file, coastal_data, meta, output_res = 0.000
 
     print(f"Running Coastal Masking on {json_file}")
 
-    # Clip large coastal data to tile extent
+    # Clip large coastal data to approx. tile extent
     tile_extent = gpd.read_file(json_file)
     coastal = gpd.read_file(coastal_data)
     clipped = gpd.overlay(coastal, tile_extent, how="intersection")
@@ -312,15 +319,12 @@ def coastal_mask_cog(json_file, out_file, coastal_data, meta, output_res = 0.000
         raster = np.zeros((height, width), dtype=np.uint8)
     
     else:  
-        # Mask for inside EMIT tile = 1, outside tile = 0 --> needed to prevent classification as water in corners
-        tile_mask = rasterize(
-            [(geom, 1) for geom in tile_extent.geometry if not geom.is_empty],
-            out_shape=(height, width),
-            transform=transform,
-            fill=0,
-            dtype=np.uint8
-        )
-        
+        #  Mask for inside EMIT tile = 1, outside tile = 0 --> needed to prevent classification as water in corners
+        ds_mask = gdal.Open(ortho_file)
+        if ds_mask is None:
+            raise FileNotFoundError(f"Could not open {ortho_file}")
+        tile_mask = (ds_mask.GetRasterBand(1).ReadAsArray() != -9999)
+
         # Land = 0,  Water = 1 
         coastal_raster = rasterize(
             [(geom, 0) for geom in clipped.geometry if not geom.is_empty],
