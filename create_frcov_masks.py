@@ -2,17 +2,14 @@ import json
 import click
 import glob
 import os 
-from osgeo import gdal, ogr, osr 
+from osgeo import gdal
 import numpy as np
 
 import subprocess
 import geopandas as gpd
 from affine import Affine
-
 import rasterio
-from rasterio.features import shapes,rasterize
-from shapely.geometry import shape, mapping
-from shapely.ops import unary_union
+from rasterio.features import rasterize
 
 from mosaic import apply_glt_noClick
 from spec_io import load_data, write_cog, open_tif
@@ -111,7 +108,7 @@ def process_files(fid, input_loc, output_loc, urban_data_loc, coastal_data_loc, 
 
 #### 
 
-def geotiff_extent_to_geojson(tiff_path, geojson_path, nodata_value=-9999):
+def geotiff_extent_to_geojson(tiff_path, geojson_path):
     """
     Extracts the bounding box of a GeoTIFF file and saves it as a GeoJSON file.
     
