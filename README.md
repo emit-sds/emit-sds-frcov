@@ -7,7 +7,7 @@
 Corresponding author: K. Dana Chadwick (dana.chadwick@jpl.nasa.gov)
 
 **Key Points:**
-   1. **FROM SBG Docs:** Please note that this ATBD will be updated on an ongoing basis as the EMIT extended mission progresses. This is intended to be a place where the community can find the most up-to-date information on the current plans for algorithm development and offer contributions.
+   1. Please note that this ATBD will be updated on an ongoing basis as the EMIT extended mission progresses. This is intended to be a place where the community can find the most up-to-date information on the current plans for algorithm development and offer contributions.
    2. 
    3. 
 
