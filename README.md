@@ -28,16 +28,18 @@ Corresponding author: K. Dana Chadwick (dana.chadwick@jpl.nasa.gov)
 This is Version 1.0 of the EMIT fractional cover and fractional cover quality assessment (QA) product.
 
 ## 2 Introduction
+Mineral dust aerosols originate as soil particles lifted into the atmosphere by wind erosion. Mineral dust created by human activity makes a large contribution to the uncertainty of direct radiative forcing (RF) by anthropogenic aerosols (USGCRP and IPCC). Mineral dust is a prominent aerosol constituent around the globe. However, we have poor understanding of its direct radiative effect, partly due to uncertainties in the dust mineral composition. Dust radiative forcing is highly dependent on its mineral-specific absorption properties. The current range of iron oxide abundance in dust source models translates into a large range of values, even changing the sign of the forcing (-0.15 to 0.21 W/m2) predicted by Earth System Models (ESMs) (Li et al., 2020). The National Aeronautics and Space Administration (NASA) selected the Earth Surface Mineral Dust Source Investigation (EMIT) to close this knowledge gap. EMIT launched an instrument to the International Space Station (ISS) to directly measure and map the soil mineral composition of critical dust-forming regions worldwide.
 
 ## 3 Context/Background
-
+As part of the EMIT mission, a three-class fractional cover product is being developed to provide estimates of the fractional cover of photosynthetic vegetation (PV), non-photosynthetic vegetation (NPV), and bare soil (BS) within each 60 m EMIT pixel. This product will be used to help interpret the surface mineralogy results from the EMIT mission, as well as provide a valuable dataset for the broader science community.
 ### 3.1 Historical Perspective
-
+Fractional cover products have been developed for a variety of sensors, including Landsat, MODIS, and Sentinel-2. These products have been used for a variety of applications, including land cover classification, vegetation monitoring, and soil moisture estimation. The EMIT fractional cover product builds on this previous work by using the unique capabilities of the EMIT instrument to provide high-resolution estimates of fractional cover across the globe as the purview of the mission expands in its extended mission activities. The EMIT fractional cover product was developed as part of the prime mission activities but was not formally delivered to the DAAC. The product is being refined and formally delivered to the DAAC as part of the EMIT extended mission activities.
 ### 3.2 Additional Information
-
+THe fractional cover product described here is a three component model which is masked by a series of quality assessment (QA) flags. The three components are photosynthetic vegetation (PV), non-photosynthetic vegetation (NPV), and bare soil (BS). The QA flags include cloud, urban, water, and snow/ice. The fractional cover product is derived using a Monte Carlo Spectral Unmixing approach, which is described in detail in Section 4. The QA flags are derived using a combination of the EMIT L2A surface reflectance product (Green, 2022b), the ESA WorldCover land cover product (Zanaga et al., 2021), and the GSHHG global database of coastlines and rivers (Wessel and Smith, 1996). The QA flags are described in detail in Section 4.5.
 ## 4 Algorithm Description
 
 ### 4.1 Scientific Theory
+To estimate fractional cover, we use a Monte Carlo Spectral Unmixing strategy, based on decades of literature (e.g., Roberts et al. 1998, Asner and Lobell 2000, and Dennison et al., 2019). Several key parameters, including the endmember selection strategy, observation normalization techniques, and the number of bootstrap samples were investigated. Simulation experiments comparing over one million synthetic spectra constructed with endmember holdout sets were utilized to select parameter values (generally following the approach of Okin et al., 2015). Selected parameter values are shown in Table 4.2.1-1. Parameters were chosen based on a combination of mean squared error, prediction variance, prediction bias, and computation time. All values can be tested through parameter selection in the unmix.jl script provided in the SpectralUnmixing EMIT SDS repository (https://github.com/emit-sds/SpectralUnmixing).
 
 ### 4.2 Mathematical Theory
 
