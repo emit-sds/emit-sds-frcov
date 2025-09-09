@@ -39,14 +39,14 @@ THe fractional cover product described here is a three component model which is 
 ## 4 Algorithm Description
 
 ### 4.1 Scientific Theory
+The fractional cover product is derived using a Monte Carlo Spectral Unmixing approach. This approach uses a spectral library of endmembers to estimate the fractional cover of each component within each pixel. The spectral library used for the EMIT fractional cover product is derived from field and laboratory measurements of soils and vegetation. The spectral library includes endmembers for photosynthetic vegetation, non-photosynthetic vegetation, and bare soil. The spectral library is described in detail in Ochoa et al. 
+
+### 4.2 Mathematical Theory
 To estimate fractional cover, we use a Monte Carlo Spectral Unmixing strategy, based on decades of literature (e.g., Roberts et al. 1998, Asner and Lobell 2000, and Dennison et al., 2019). Several key parameters, including the endmember selection strategy, observation normalization techniques, and the number of bootstrap samples were investigated. Simulation experiments comparing over one million synthetic spectra constructed with endmember holdout sets were utilized to select parameter values (generally following the approach of Okin et al., 2015). Selected parameter values are shown in Table 4.2.1-1. Parameters were chosen based on a combination of mean squared error, prediction variance, prediction bias, and computation time. All values can be tested through parameter selection in the unmix.jl script provided in the SpectralUnmixing EMIT SDS repository (https://github.com/emit-sds/SpectralUnmixing).
 
 **Table 4.2.1-1.** _Unmixing parameter value selection_
 | Parameter Name | Tested Values | Selected Values |
 | --- | --- | --- |
-
-### 4.2 Mathematical Theory
-
 ### 4.3 Fractional Cover Algorithm Input Variables
 
 The required input files for fractional cover production are in Table 1.
