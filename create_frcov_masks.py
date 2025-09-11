@@ -15,6 +15,8 @@ from mosaic import apply_glt_noClick
 from spec_io import load_data, write_cog, open_tif
 
 
+# Example call -- python create_frcov_masks.py process-files emit20250824t005342_o23601_s001 /home/colemanr/Unmixing/outputs/
+
 ### 
 @click.command()
 @click.argument('fid', type=str, required=True)
@@ -22,8 +24,9 @@ from spec_io import load_data, write_cog, open_tif
 @click.option('--input_loc', type=click.Path(exists=True), default="/store/emit/ops/data/acquisitions/")
 @click.option('--urban_data_loc', type=click.Path(exists=True), default="/store/shared/landcover/complete_landcover.vrt")
 @click.option('--coastal_data_loc', type=click.Path(exists=True), default="/store/shared/landcover/GSHHS_f_L1.shp")
+@click.option('--spec_tf_loc', type=click.Path(exists=True), default="/store/jakelee/products/20250902_willow/cloud_masks_ort/")
 @click.option('--glt_nodata_value', type=int, default = 0)
-def process_files(fid, input_loc, output_loc, urban_data_loc, coastal_data_loc, glt_nodata_value):
+def process_files(fid, input_loc, output_loc, urban_data_loc, coastal_data_loc, spec_tf_loc, glt_nodata_value):
     """
     Generate QC product for EMIT fractional cover 
 
@@ -53,6 +56,7 @@ def process_files(fid, input_loc, output_loc, urban_data_loc, coastal_data_loc, 
         rfl_file = glob.glob(os.path.join(input_loc, fid[4:12], fid.split('_')[0], "l2a", "*l2a_rfl_*.hdr"))[0]
         mask_file = glob.glob(os.path.join(input_loc, fid[4:12], fid.split('_')[0], "l2a", "*l2a_mask_*.hdr"))[0]
         glt_file = glob.glob(os.path.join(input_loc, fid[4:12], fid.split('_')[0], "l1b", "*l1b_glt_*.hdr"))[0]
+        spec_tf_file = glob.glob(os.path.join(spec_tf_loc, fid + '*_ort.tif'))[0]
     except Exception as e: 
         print('No path found for FID')
 
@@ -66,7 +70,7 @@ def process_files(fid, input_loc, output_loc, urban_data_loc, coastal_data_loc, 
     json_filename = os.path.join(output_loc, fid + '_extent.json')
     geotiff_extent_to_geojson(ortho_mask_file, json_filename)
 
-    # Urban mask and orth
+    # Urban mask and ortho
     urban_out_file = os.path.join(output_loc, fid + '_ortho_urban.tif')
     ref_path = ortho_mask_file
     meta = urban_mask_cog(ortho_mask_file, urban_out_file, json_filename, urban_data_loc, ref_path)
@@ -88,9 +92,13 @@ def process_files(fid, input_loc, output_loc, urban_data_loc, coastal_data_loc, 
     _, ndsi_mask = open_tif(ndsi_ortho_file)
 
     emit_meta, emit_mask = open_tif(ortho_mask_file)
-    emit_cloud = emit_mask[:,:,0]
+    # emit_cloud = emit_mask[:,:,0]
     emit_cirrus = emit_mask[:,:,1]
     emit_water = emit_mask[:,:,2]
+
+    ## Get updated cloud masks (SpecTF results)
+    _, emit_specTf = open_tif(spec_tf_file)
+    emit_cloud = emit_specTf[:,:,0]
 
     ## Convert to singleband 
     single_band_stack = os.path.join(output_loc, fid + '_ortho_hierarchy.tif')
