@@ -92,17 +92,20 @@ def process_files(fid, input_loc, output_loc, urban_data_loc, coastal_data_loc, 
     _, ndsi_mask = open_tif(ndsi_ortho_file)
 
     emit_meta, emit_mask = open_tif(ortho_mask_file)
-    # emit_cloud = emit_mask[:,:,0]
     emit_cirrus = emit_mask[:,:,1]
     emit_water = emit_mask[:,:,2]
+    emit_onboard_cloud = emit_mask[:,:,3]
 
     ## Get updated cloud masks (SpecTF results)
-    _, emit_specTf = open_tif(spec_tf_file)
-    emit_cloud = emit_specTf[:,:,0]
+    try: 
+        _, emit_specTf = open_tif(spec_tf_file)
+        emit_cloud = emit_specTf[:,:,0]
+    except: 
+        emit_cloud = emit_mask[:,:,0]  
 
     ## Convert to singleband 
     single_band_stack = os.path.join(output_loc, fid + '_ortho_hierarchy.tif')
-    singleband_raster_hierarchy(emit_cloud, emit_cirrus, emit_water, 
+    singleband_raster_hierarchy(emit_cloud, emit_cirrus, emit_water, emit_onboard_cloud,
                                 urban_mask[:,:,0], ndsi_mask[:,:,0], coastal_mask[:,:,0], 
                                 single_band_stack, emit_meta)
 
@@ -158,7 +161,7 @@ def geotiff_extent_to_geojson(tiff_path, geojson_path):
             json.dump(geojson, f, indent=2)
 
 
-def singleband_raster_hierarchy(cloud, cirrus, water, urban, snow_ice, coastal, out_file, meta):
+def singleband_raster_hierarchy(cloud, cirrus, water, onboard_cloud, urban, snow_ice, coastal, out_file, meta):
     """
     Condense multiple row x col arrays into a single band COG with a hierarchical classification process
     
@@ -186,7 +189,7 @@ def singleband_raster_hierarchy(cloud, cirrus, water, urban, snow_ice, coastal, 
 
     # apply hierarchical categorization logic 
     result = np.zeros((cloud.shape[0], cloud.shape[1]), dtype=np.uint8)
-    result[(cloud == 1) | (cirrus == 1)] = 1
+    result[(cloud == 1) | (cirrus == 1) | (onboard_cloud == 1)] = 1
     result[(urban == 1) & (result == 0)] = 2
     result[((water == 1) | (coastal == 1)) & (result == 0)] = 3
     result[(snow_ice == 1) & (result == 0)] = 4
