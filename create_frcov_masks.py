@@ -55,6 +55,7 @@ def process_files(fid, input_loc, output_loc, urban_data_loc, coastal_data_loc, 
         rfl_file = glob.glob(os.path.join(input_loc, fid[4:12], fid.split('_')[0], "l2a", "*l2a_rfl_*.hdr"))[0]
         mask_file = glob.glob(os.path.join(input_loc, fid[4:12], fid.split('_')[0], "l2a", "*l2a_mask_*.hdr"))[0]
         glt_file = glob.glob(os.path.join(input_loc, fid[4:12], fid.split('_')[0], "l1b", "*l1b_glt_*.hdr"))[0]
+        rdn_file = glob.glob(os.path.join(input_loc, fid[4:12], fid.split('_')[0], "l1a", "*l1a_raw*.hdr"))[0]
     except Exception as e: 
         print('No path found for FID')
 
@@ -63,6 +64,10 @@ def process_files(fid, input_loc, output_loc, urban_data_loc, coastal_data_loc, 
     # Orthorectify EMIT mask file 
     ortho_mask_file = os.path.join(output_loc, fid + '_ortho_mask.tif')
     apply_glt_noClick(glt_file, mask_file, ortho_mask_file, nodata_value=-9999, bands=None, output_format='tif', glt_nodata_value=glt_nodata_value)
+
+    # Orthorectify single EMIT radiance band to get onboard cloud screening
+    ortho_rdn_file = os.path.join(output_loc, fid + '_ortho_rdn.tif')
+    apply_glt_noClick(glt_file, rdn_file, ortho_rdn_file, nodata_value=-9999, bands=[1], output_format='tif', glt_nodata_value=glt_nodata_value)
 
     # Write ortho'ed extent to json file 
     json_filename = os.path.join(output_loc, fid + '_extent.json')
@@ -88,26 +93,28 @@ def process_files(fid, input_loc, output_loc, urban_data_loc, coastal_data_loc, 
     _, urban_mask = open_tif(urban_out_file)
     _, coastal_mask = open_tif(coastal_out_file)
     _, ndsi_mask = open_tif(ndsi_ortho_file)
+    _, emit_onboard_cloud = open_tif(ortho_rdn_file)
+
 
     emit_meta, emit_mask = open_tif(ortho_mask_file)
     emit_cloud = emit_mask[:,:,0]
     emit_cirrus = emit_mask[:,:,1]
     emit_water = emit_mask[:,:,2]
-    emit_onboard_cloud = emit_mask[:,:,3]
 
     ## Convert to singleband 
     single_band_stack = os.path.join(output_loc, fid + '_ortho_hierarchy.tif')
-    singleband_raster_hierarchy(emit_cloud, emit_cirrus, emit_water, emit_onboard_cloud,
+    singleband_raster_hierarchy(emit_cloud, emit_cirrus, emit_water, emit_onboard_cloud[:,:,0],
                                 urban_mask[:,:,0], ndsi_mask[:,:,0], coastal_mask[:,:,0], 
                                 single_band_stack, emit_meta)
 
-    ## Clean up and remove intermediary files
+    # Clean up and remove intermediary files
     os.remove(ndsi_file)
     os.remove(ndsi_ortho_file)
     os.remove(ortho_mask_file)
     os.remove(coastal_out_file)
     os.remove(urban_out_file)
     os.remove(json_filename)
+    os.remove(ortho_rdn_file)
 
 #### 
 
@@ -181,7 +188,7 @@ def singleband_raster_hierarchy(cloud, cirrus, water, onboard_cloud, urban, snow
 
     # apply hierarchical categorization logic 
     result = np.zeros((cloud.shape[0], cloud.shape[1]), dtype=np.uint8)
-    result[(cloud == 1) | (cirrus == 1) | (onboard_cloud == 1)] = 1
+    result[(cloud == 1) | (cirrus == 1) | (onboard_cloud == -9990) | (onboard_cloud == -9997)] = 1
     result[(urban == 1) & (result == 0)] = 2
     result[((water == 1) | (coastal == 1)) & (result == 0)] = 3
     result[(snow_ice == 1) & (result == 0)] = 4
