@@ -121,13 +121,28 @@ This hierarchy order minimizes incorrect classification of pixels with NDSI thre
 ### 6.2 Uncertainties
 
 ### 6.3 Known Issues
+The spectral library used for unmixing may not be representative of all surface types globally, leading to potential inaccuracies in fractional cover estimates in some regions. Here we describe known issues with both the fractional cover and fractional cover QA products for users to be aware of. Many of these issues are being addressed in ongoing work to improve the products and will be resolved in a planned v2 release.
 
 #### 6.3.1 Fractional Cover 
+The following issues have been identified with the fractional cover product in areas that are not flagged by the current QA product. This section will be updated as issues with the QA product are addressed or the fractional cover product is improved.
+* At cloud edges and in cloud shadows regions are often inaccurately estimated as high NPV (Figures 1 & 2).
+
+![Example of NPV misclassification](figs/NPV_KnownIssue1.png "Example of NPV misclassification")
+
+*Figure 1: Example of NPV misclassification along cloud edges and in cloud shadows on the north side of clouds present in the image.*
+
+![Example of NPV misclassification](figs/NPV_KnownIssue2.png "Example of NPV misclassification")
+
+*Figure 2: Example of NPV misclassification along cloud edges on the north side of clouds present in the image.*
+
 
 #### 6.3.2 Fractional Cover QA 
 * The GSHHG dataset does not include major inland lakes, including the Great Lakes, which should be classified as QA water pixels
 * EMIT L2A mask product may fail to identify liquid water for acquisitions with substantial sun glint, leading to misclassified water pixels in the QA product
-* NDSI threhsold value of 0.4 may over-identify liquid water pixels as snow/ice pixels in the QA product
+* NDSI threshold value of 0.4 may over-identify liquid water pixels as snow/ice pixels in the QA product
+* Shaded snow/ice pixels may be identified as water in the QA product.
+* Bright snow/ice pixels may be misidentified as clouds in the QA product.
+* Some clouds over water may result in no QA flag being assigned to the pixel.
 
 ## 7 Algorithm Implementation
 
