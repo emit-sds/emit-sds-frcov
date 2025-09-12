@@ -125,7 +125,7 @@ The spectral library used for unmixing may not be representative of all surface 
 
 #### 6.3.1 Fractional Cover 
 The following issues have been identified with the fractional cover product in areas that are not flagged by the current QA product. This section will be updated as issues with the QA product are addressed or the fractional cover product is improved.
-* At cloud edges and in cloud shadows regions are often inaccurately estimated as high NPV (Figures 1 & 2).
+* At cloud edges and in cloud shadows regions are often inaccurately estimated as high NPV (Figures 1 & 2). Users may opt to use the cloud buffer mask provided in the EMIT L2A Mask product (Green, 2022a) to remove these pixels from analysis.
 
 ![Example of NPV misclassification](figs/NPV_KnownIssue1.png "Example of NPV misclassification")
 
