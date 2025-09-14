@@ -36,7 +36,13 @@ This is Version 1.0 of the EMIT fractional cover and fractional cover quality as
 Mineral dust aerosols originate as soil particles lifted into the atmosphere by wind erosion. Mineral dust created by human activity makes a large contribution to the uncertainty of direct radiative forcing (RF) by anthropogenic aerosols (USGCRP and IPCC). Mineral dust is a prominent aerosol constituent around the globe. However, we have poor understanding of its direct radiative effect, partly due to uncertainties in the dust mineral composition. Dust radiative forcing is highly dependent on its mineral-specific absorption properties. The current range of iron oxide abundance in dust source models translates into a large range of values, even changing the sign of the forcing (-0.15 to 0.21 W/m2) predicted by Earth System Models (ESMs) (Li et al., 2020). The National Aeronautics and Space Administration (NASA) selected the Earth Surface Mineral Dust Source Investigation (EMIT) to close this knowledge gap. EMIT launched an instrument to the International Space Station (ISS) to directly measure and map the soil mineral composition of critical dust-forming regions worldwide.
 
 ## 3 Context/Background
-As part of the EMIT mission, a three-class fractional cover product is being developed to provide estimates of the fractional cover of photosynthetic vegetation (PV), non-photosynthetic vegetation (NPV), and bare soil (S) within each 60 m EMIT pixel. This product will be used to help interpret the surface mineralogy results from the EMIT mission, as well as provide a valuable dataset for the broader science community.
+As part of the EMIT mission, a three-class fractional cover product is being developed to provide estimates of the fractional cover of photosynthetic vegetation (PV or GV), non-photosynthetic vegetation (NPV), and bare soil (S) within each 60 m EMIT pixel. This product will be used to help interpret the surface mineralogy results from the EMIT mission, as well as provide a valuable dataset for the broader science community.
+
+Example spectra from the three classes are shown in Figure 3 from Ochoa et al, 2025. 
+
+![Example spectra from the three classes](figs/Ochoa_spec.jpg "Example spectra from the three classes")
+*Figure 3-1. A random selection of spectra from the endmember library used for unmixing. Figure from Ochoa et al., 2025.* 
+
 ### 3.1 Historical Perspective
 Fractional cover products have been used for a variety of applications, including land cover classification, vegetation monitoring, and soil moisture estimation. The EMIT fractional cover product builds on this previous work by using the unique capabilities of the EMIT instrument to provide high-resolution estimates of fractional cover across the globe as the purview of the mission expands in its extended mission activities. The EMIT fractional cover product was developed as part of the prime mission activities but was not formally delivered to the DAAC. The product is being refined and formally delivered to the DAAC as part of the EMIT extended mission activities.
 ### 3.2 Additional Information
@@ -233,6 +239,8 @@ Hyperspectral Imager Spectra.</i> Remote Sensing, 11(18), p.2072.
 * Hall,  Dorothy K. and Riggs,  George A. and Salomonson,  Vincent V. (1995). <i>Development of methods for mapping global snow cover using moderate resolution imaging spectroradiometer data</i>. Remote Sensing of Environment, 54, 0034-4257. http://dx.doi.org/10.1016/0034-4257(95)00137-P
 
 * Hall, Dorothy K. and Riggs, George A. and Román, Miguel O. (2015). <i> VIIRS Snow Cover Algorithm Theoretical Basis Document (ATBD) </i>. https://viirsland.gsfc.nasa.gov/PDF/VIIRS_snow_cover_ATBD_2015.pdf
+
+* Ochoa, F., Brodrick, P. G., Okin, G. S., Ben-Dor, E., Meyer, T., Thompson, D. R., & Green, R. O. (2025). <i>Soil and vegetation cover estimation for global imaging spectroscopy using spectral mixture analysis.</i> Remote Sensing of Environment, 324, 114746.
 
 * Roberts, D., Gardner, M., Church, R., Ustin, S., Scheer, G., & Green, R. 1998, Remote Sensing of Environment, 65, 267.
 
