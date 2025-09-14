@@ -142,7 +142,7 @@ Note that the QA flags are not mutually exclusive and also the QA flags are not 
 
 ### 6.1 Validation Methods
 
-<i>[validation methodologies should reference Francisco's work here, but I don't have detailed descriptions - would recommend showing validation plots from Ochoa paper?] <i/>
+<i>[validation methodologies should reference Francisco's work here, but I don't have detailed descriptions - would recommend showing validation plots from Ochoa paper?] </i>
 
 ### 6.2 Uncertainties
 
