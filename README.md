@@ -1,15 +1,15 @@
 # EMIT Fractional Cover Product Delivery - Algorithm Theoretical Basis Document (ATBD)
 
-*K.D. Chadwick**<sup>1</sup>, *Red Willow Coleman*<sup>1</sup>
+*Philip Brodrick*<sup>1</sup>, *Francisco Ochoa*<sup>2</sup>, *Greg Okin*<sup>2</sup>, *Red Willow Coleman*<sup>1</sup>, *K.D. Chadwick*<sup>1</sup>
 
 <sup>1</sup>Jet Propulsion Laboratory, California Institute of Technology
+<sup>2</sup>University of California, Los Angeles
 
-Corresponding author: K. Dana Chadwick (dana.chadwick@jpl.nasa.gov)
+Corresponding author: Philip Brodrick (philip.brodrick@jpl.nasa.gov)
 
 **Key Points:**
    1. Please note that this ATBD will be updated on an ongoing basis as the EMIT extended mission progresses. This is intended to be a place where the community can find the most up-to-date information on the current plans for algorithm development and offer contributions.
-   2. 
-   3. 
+   2. This is a three component model with a series of quality assessment (QA) flags. The mission will be producing a more detailed V2 of this product which will supersede this version during FY26. 
 
 **Version:** 1.0
 
@@ -18,6 +18,7 @@ Corresponding author: K. Dana Chadwick (dana.chadwick@jpl.nasa.gov)
 **DOI:** TBD
 
 ## Abstract
+
 
 ## Plain Language Summary
 
@@ -72,7 +73,11 @@ The required input files for fractional cover production are in Table 4.3-1.
 | Observation Geometry | solar zenith angle, view zenith angle, relative azimuth angle | degree | false |
 
 ### 4.4 Fractional Cover Algorithm Output Variables
-The EMIT output data products delivered to the DAAC use their formatting conventions, the system operates internally on data products stored as binary data cubes with detatched human-readable ASCII header files.
+The EMIT output data products delivered to the DAAC use their formatting conventions, the system operates internally on data products stored as binary data cubes with detatched human-readable ASCII header files. For the fraction cover product, the output variables are: 
+1. Fractional cover, provided as an n x c x 3 BIL interleave data cube, with c columns and n lines. Each channel contains the fractional cover as calculated by Monte Carlo SMA (see section 4.2.1).
+2. Fractional cover uncertainty, provided as an n x c x 3 BIL interleave data cube, with c columns and n lines. Each channel contains the estimated uncertainty of the fraction cover, as defined in section 6.2.
+
+These products are consistent with the auxiliary data products described in the EMIT L3ASA ATBD, section 4.4.2 (Brodrick et al., 2023).
 
 ### 4.5 Fractional Cover QA Product Input Variables
 The required input files for fractional cover QA production are in Table 4.5-1.
@@ -126,6 +131,8 @@ The QA product is a single band cloud-optimized GeoTIFF (COG), where each flagge
 This hierarchy order minimizes incorrect classification of pixels with NDSI thresholding, which is known to over-identify liquid water as snow/ice. 
 
 ## 5 Algorithm Usage Constraints
+
+Note that the QA flags are not mutually exclusive and also the QA flags are not intended as a comprehensive cloud, urban, water, or snow/ice identification product. Rather, it is intended to flag pixels that are likely to be misclassified by the fractional cover algorithm and it is not recommended to use the QA product as a standalone cloud, urban, water, or snow/ice product.
 
 ## 6 Performance Assessment
 
