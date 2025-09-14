@@ -10,6 +10,7 @@ Corresponding author: Philip Brodrick (philip.brodrick@jpl.nasa.gov)
 **Key Points:**
    1. Please note that this ATBD will be updated on an ongoing basis as the EMIT extended mission progresses. This is intended to be a place where the community can find the most up-to-date information on the current plans for algorithm development and offer contributions.
    2. This is a three component model with a series of quality assessment (QA) flags. The mission will be producing a more detailed V2 of this product which will supersede this version during FY26. 
+   3. If you identify issues with this product not current outlined in the Known Issues section, please contribute that information here to help the community.
 
 **Version:** 1.0
 
@@ -19,8 +20,11 @@ Corresponding author: Philip Brodrick (philip.brodrick@jpl.nasa.gov)
 
 ## Abstract
 
-
 ## Plain Language Summary
+
+The terrestrial surface of the Earth is comprised of many substances. Using imaging spectroscopy, we work to classify these substances into groups in order to help with the interpreation of various algorithms. In this Version 1 of the EMIT Fractional Cover Product, we are focused on being able to determine the fractions comprised of bare rock/soil (areas where mineral determination algorithms are appropriate for interpretation), photosynthetic vegetation (largely identified by their characteristic red edge and low reflectance in the SWIR, appropriate for interpretation of trait estimation algorithms), and non-photosynthetic vegetation (which can include leaf litter, wood, some lichens and biocrusts). All other surface types, as well as areas that are obscured by clouds, we seek to flag using the QA bands assocaited with this product.
+
+We are providing this Algorithm Theoretical Basis Document in a github markdown format in order to provide a record of ongoing updates as algorithms improved via the commit record, as well as allowing the community to engage more directly in the process of documentation in keeping with NASA's committment to open science. 
 
 ### Keywords: hyperspectral imaging, imaging spectroscopy, fractional cover, terrestrial
 
@@ -34,7 +38,7 @@ Mineral dust aerosols originate as soil particles lifted into the atmosphere by 
 ## 3 Context/Background
 As part of the EMIT mission, a three-class fractional cover product is being developed to provide estimates of the fractional cover of photosynthetic vegetation (PV), non-photosynthetic vegetation (NPV), and bare soil (S) within each 60 m EMIT pixel. This product will be used to help interpret the surface mineralogy results from the EMIT mission, as well as provide a valuable dataset for the broader science community.
 ### 3.1 Historical Perspective
-Fractional cover products have been developed for a variety of sensors, including Landsat, MODIS, and Sentinel-2. These products have been used for a variety of applications, including land cover classification, vegetation monitoring, and soil moisture estimation. The EMIT fractional cover product builds on this previous work by using the unique capabilities of the EMIT instrument to provide high-resolution estimates of fractional cover across the globe as the purview of the mission expands in its extended mission activities. The EMIT fractional cover product was developed as part of the prime mission activities but was not formally delivered to the DAAC. The product is being refined and formally delivered to the DAAC as part of the EMIT extended mission activities.
+Fractional cover products have been used for a variety of applications, including land cover classification, vegetation monitoring, and soil moisture estimation. The EMIT fractional cover product builds on this previous work by using the unique capabilities of the EMIT instrument to provide high-resolution estimates of fractional cover across the globe as the purview of the mission expands in its extended mission activities. The EMIT fractional cover product was developed as part of the prime mission activities but was not formally delivered to the DAAC. The product is being refined and formally delivered to the DAAC as part of the EMIT extended mission activities.
 ### 3.2 Additional Information
 THe fractional cover product described here is a three component model which is masked by a series of quality assessment (QA) flags. The three components are photosynthetic vegetation (PV), non-photosynthetic vegetation (NPV), and bare soil (S). The QA flags include cloud, urban, water, and snow/ice. The fractional cover product is derived using a Monte Carlo Spectral Unmixing approach, which is described in detail in Section 4. The QA flags are derived using a combination of the EMIT L2A surface reflectance product (Green, 2022b), the ESA WorldCover land cover product (Zanaga et al., 2021), and the GSHHG global database of coastlines and rivers (Wessel and Smith, 1996). The QA flags are described in detail in Section 4.5.
 ## 4 Algorithm Description
@@ -116,10 +120,10 @@ Where 560 nm is the "Green" wavelength band and 1600 nm is the "SWIR (shortwave-
 ### 4.6 Fractional Cover QA Product Output Variables
 The EMIT output data products delivered to the DAAC use their formatting conventions, the system operates internally on data products stored as binary data cubes with detatched human-readable ASCII header files.
 
-The QA product is a single band cloud-optimized GeoTIFF (COG), where each flagged QA pixel is assigned one of the following values:  
- * 1 = Cloud 
- * 2 = Urban 
- * 3 = Water
+The QA product is a single band cloud-optimized GeoTIFF (COG), where each flagged QA pixel is assigned one of the following values with colors associated with figures below in parantheses for reference:  
+ * 1 = Cloud (orange)
+ * 2 = Urban (green)
+ * 3 = Water (red)
  * 4 = Snow/Ice
 
  For pixels that contain multiple QA flags (e.g., a water pixel covered by clouds), the following hierarchy is employed: 
@@ -138,7 +142,13 @@ Note that the QA flags are not mutually exclusive and also the QA flags are not 
 
 ### 6.1 Validation Methods
 
+<i>[validation methodologies should reference Francisco's work here, but I don't have detailed descriptions - would recommend showing validation plots from Ochoa paper?] <i/>
+
 ### 6.2 Uncertainties
+
+To estimate the uncertainty of the Monte Carlo SMA results, we run 50 Monte Carlo simulations. During each simulation, the endmember selection is seeded differently (representing model error) and the reflectance is perturbed by a (per-wavelength) random deviation proportionate to the channelized reflectance uncertainty provided by L2A. The standard deviation of the soil fractional cover from the different simulations (𝜎 <_>𝑠 𝑗) is then used as the uncertainty.
+
+We neglect the uncertianty assocaited with QA assessment for the purposes of providing a mask for this product.
 
 ### 6.3 Known Issues
 The spectral library used for unmixing may not be representative of all surface types globally, leading to potential inaccuracies in fractional cover estimates in some regions. Here we describe known issues with both the fractional cover and fractional cover QA products for users to be aware of. Many of these issues are being addressed in ongoing work to improve the products and will be resolved in a planned v2 release.
@@ -168,6 +178,8 @@ The following issues have been identified with the fractional cover product in a
 
 ### 7.1 Algorithm Availability
 
+Fractional cover algorithms used to generate this product are avaliable in the EMIT SDS project on github (https://github.com/emit-sds/emit-sds-frcov). 
+
 ### 7.2 Input Data Access
 All input data required to run the code not found in the above repositories is available at the NASA Digital Archive. 
 
@@ -190,7 +202,7 @@ ORCID: 0000-0002-5633-4865
 
 Email: dana.chadwick@jpl.nasa.gov 
 
-Role(s) related to this ATBD: writing - original and revision, methodology, software. 
+Role(s) related to this ATBD: writing - original and revision, methodology, quality assessment. 
 
 Affiliation – Jet Propulsion Laboratory, California Institute of Technology 
 
@@ -209,6 +221,11 @@ Affiliation – Jet Propulsion Laboratory, California Institute of Technology
 
 ## References
 
+* Asner, Gregory P., and David B. Lobell. <i>A biogeophysical approach for automated SWIR unmixing of soils and vegetation.</i> Remote sensing of environment 74.1 (2000): 99-112.
+
+* Dennison, P.E., Qi, Y., Meerdink, S.K., Kokaly, R.F., Thompson, D.R., Daughtry, C.S., Quemada, M., Roberts, D.A., Gader, P.D., Wetherley, E.B. and Numata, I., 2019. <i>Comparison of Methods for Modeling Fractional Cover Using Simulated Satellite
+Hyperspectral Imager Spectra.</i> Remote Sensing, 11(18), p.2072.
+
 * Green, R. (2022a). <i>EMIT L1B At-Sensor Calibrated Radiance and Geolocation Data 60 m V001</i> [Data set]. NASA Land Processes Distributed Active Archive Center. https://doi.org/10.5067/EMIT/EMITL1BRAD.001
 
 * Green, R. (2022b). <i>EMIT L2A Estimated Surface Reflectance and Uncertainty and Masks 60 m V001</i> [Data set]. NASA Land Processes Distributed Active Archive Center. https://doi.org/10.5067/EMIT/EMITL2ARFL.001
@@ -216,6 +233,8 @@ Affiliation – Jet Propulsion Laboratory, California Institute of Technology
 * Hall,  Dorothy K. and Riggs,  George A. and Salomonson,  Vincent V. (1995). <i>Development of methods for mapping global snow cover using moderate resolution imaging spectroradiometer data</i>. Remote Sensing of Environment, 54, 0034-4257. http://dx.doi.org/10.1016/0034-4257(95)00137-P
 
 * Hall, Dorothy K. and Riggs, George A. and Román, Miguel O. (2015). <i> VIIRS Snow Cover Algorithm Theoretical Basis Document (ATBD) </i>. https://viirsland.gsfc.nasa.gov/PDF/VIIRS_snow_cover_ATBD_2015.pdf
+
+* Roberts, D., Gardner, M., Church, R., Ustin, S., Scheer, G., & Green, R. 1998, Remote Sensing of Environment, 65, 267.
 
 * Wessel, P., and W. H. F. Smith (1996), <i>A global, self-consistent, hierarchical, high-resolution shoreline database</i>. Journal of Geophysical Research, 101(B4), 8741–8743. https://doi.org/10.1029/96JB00104
 
