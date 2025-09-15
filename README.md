@@ -41,6 +41,7 @@ As part of the EMIT mission, a three-class fractional cover product is being dev
 Example spectra from the three classes are shown in Figure 3 from Ochoa et al, 2025. 
 
 ![Example spectra from the three classes](figs/Ochoa_spec.jpg "Example spectra from the three classes")
+
 *Figure 3-1. A random selection of spectra from the endmember library used for unmixing. Figure from Ochoa et al., 2025.* 
 
 ### 3.1 Historical Perspective
