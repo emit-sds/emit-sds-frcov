@@ -43,7 +43,6 @@ def process_files(rfl_file, l2a_mask_file, glt_file, frcov_mask, urban_data, coa
     """
 
     output_directory = os.path.dirname(frcov_mask)
-    glt_nodata_value = 0
 
     acq_id = os.path.basename(l2a_mask_file).split('_')[0]
 
@@ -86,10 +85,9 @@ def process_files(rfl_file, l2a_mask_file, glt_file, frcov_mask, urban_data, coa
     emit_water = emit_mask[:,:,2]
 
     ## Convert to singleband
-    single_band_stack = os.path.join(frcov_mask)
     singleband_raster_hierarchy(emit_cloud, emit_cirrus, emit_water,
                                 urban_mask[:,:,0], ndsi_mask[:,:,0], coastal_mask[:,:,0],
-                                single_band_stack, emit_meta)
+                                frcov_mask, emit_meta)
 
     ## Clean up and remove intermediary files
     os.remove(ndsi_file)
@@ -170,13 +168,14 @@ def singleband_raster_hierarchy(cloud, cirrus, water, urban, snow_ice, coastal, 
     """
 
     # apply hierarchical categorization logic
-    result = np.zeros((cloud.shape[0], cloud.shape[1]), dtype=np.uint8)
+    result = np.zeros((cloud.shape[0], cloud.shape[1]), dtype=np.int16)
     result[(cloud == 1) | (cirrus == 1)] = 1
     result[(urban == 1) & (result == 0)] = 2
     result[((water == 1) | (coastal == 1)) & (result == 0)] = 3
     result[(snow_ice == 1) & (result == 0)] = 4
 
     result = result.reshape((result.shape[0], result.shape[1], 1))
+    result[cloud == -9999] = -9999
     write_cog(out_file, result, meta)
 
 def warp_array_to_ref(array, source_ds, ref_path, nodata_value=0):
@@ -391,7 +390,7 @@ def singleband_raster_unique(raster_stack, out_file):
         '-F', raster_stack, '--F_band=6',
         '--calc', '(A*1)+(B*2)+(C*4)+(D*8)+(E*16)+(F*32)',
         '--outfile', out_file,
-        '--NoDataValue=0',
+        '--NoDataValue=255',
         '--type=Int8',
         '--co', 'COMPRESS=LZW', ## remainder are from write_cog code
         '--co', 'BIGTIFF=YES',
