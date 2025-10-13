@@ -6,6 +6,18 @@ from spec_io import write_cog, open_tif
 
 
 def apply_mask(frcov_file, frcov_unc_file, mask_file, output_base, glt_file, glt_nodata_value):
+    
+    """
+    Apply GLT and mask to fractional cover and uncertainty files.
+
+    Args:
+        frcov_file (str): path to input fractional cover file
+        frcov_unc_file (str): path to input fractional cover uncertainty file
+        mask_file (str): path to mask file
+        output_base (str): base path for saving output files
+        glt_file (str): path to EMIT GLT file
+        glt_nodata_value (int): nodata value for GLT file (default=0)
+    """
 
     output_directory = os.path.dirname(output_base)
     os.makedirs(output_directory, exist_ok=True)

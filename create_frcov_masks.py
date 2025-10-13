@@ -35,11 +35,13 @@ def process_files(rfl_file, l2a_mask_file, glt_file, frcov_mask, urban_data, coa
 
     Args:
         acq_id (str):
-        input_loc (path str): path to EMIT reflectance, mask, GLT files
-        output_loc (path str): path to save generated mask output files
-        urban_data (path str): path to ESA worldcover dataset (.vrt/tif)
-        coastal_data (path str): path to GSHHS coastal dataset (.shp)
-        glt_nodata_value (int): defaults to 0 (nodata for .envi files)
+        rfl_file (str): path to EMIT reflectance file
+        l2a_mask_file (str): path to EMIT L2A mask file
+        glt_file (str): path to EMIT GLT file
+        frcov_mask (str): path of output fractional cover mask file
+        urban_data (str): path to ESA WorldCover datase
+        coastal_data (str): path to GSHHS coastal shapefile
+        glt_nodata_value (int): nodata value for GLT file (default=0)
     """
 
     output_directory = os.path.dirname(frcov_mask)
