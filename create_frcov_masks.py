@@ -1,7 +1,6 @@
-import json 
+import json
 import click
-import glob
-import os 
+import os
 from osgeo import gdal
 import numpy as np
 
@@ -15,25 +14,25 @@ from mosaic import apply_glt_noClick
 from spec_io import load_data, write_cog, open_tif
 
 
-### 
+###
 @click.command()
-@click.argument('fid', type=str, required=True)
-@click.argument('output_loc', type=str, required=True)
-@click.option('--input_loc', type=click.Path(exists=True), default="/store/emit/ops/data/acquisitions/")
-@click.option('--urban_data_loc', type=click.Path(exists=True), default="/store/shared/landcover/complete_landcover.vrt")
-@click.option('--coastal_data_loc', type=click.Path(exists=True), default="/store/shared/landcover/GSHHS_f_L1.shp")
+@click.argument('rfl_file', type=str, required=True)
+@click.argument('l2a_mask_file', type=str, required=True)
+@click.argument('glt_file', type=str, required=True)
+@click.argument('frcov_mask', type=str, required=True)
+@click.option('--urban_data', type=click.Path(exists=True), default="/store/shared/landcover/complete_landcover.vrt")
+@click.option('--coastal_data', type=click.Path(exists=True), default="/store/shared/landcover/GSHHS_f_L1.shp")
 @click.option('--glt_nodata_value', type=int, default = 0)
-def process_files(fid, input_loc, output_loc, urban_data_loc, coastal_data_loc, glt_nodata_value):
+def process_files(rfl_file, l2a_mask_file, glt_file, frcov_mask, urban_data, coastal_data, glt_nodata_value):
     """
-    Generate QC product for EMIT fractional cover 
+    Generate QC product for EMIT fractional cover
 
-    Writes single band COG with following values: 
+    Writes single band COG with following values:
         Cloud (EMIT cloud + cirrus flag)    = 1
         Urban                               = 2
         Water (EMIT water + coastal mask)   = 3
         Snow/Ice                            = 4
 
-<<<<<<< HEAD
     Args:
         acq_id (str):
         rfl_file (str): path to EMIT reflectance file
@@ -46,58 +45,38 @@ def process_files(fid, input_loc, output_loc, urban_data_loc, coastal_data_loc, 
     """
 
     output_directory = os.path.dirname(frcov_mask)
-=======
-    Args: 
-        fid (str):
-        input_loc (path str): path to EMIT reflectance, mask, GLT files
-        output_loc (path str): path to save generated mask output files 
-        urban_data_loc (path str): path to ESA worldcover dataset (.vrt/tif)
-        coastal_data_loc (path str): path to GSHHS coastal dataset (.shp)
-        json_file_loc (path str): path to EMIT info json file 
-        glt_nodata_value (int): defaults to 0 (nodata for .envi files) 
-    """
 
-    # Check to see if output_loc exists, if not mkdir
-    if not os.path.exists(output_loc):
-        os.makedirs(output_loc)
-        print(f"Directory '{output_loc}' created.")
->>>>>>> parent of 2827bbc (Filepath and argument updates)
+    acq_id = os.path.basename(l2a_mask_file).split('_')[0]
 
-    # Get file names
-    try: 
-        rfl_file = glob.glob(os.path.join(input_loc, fid[4:12], fid.split('_')[0], "l2a", "*l2a_rfl_*.hdr"))[0]
-        mask_file = glob.glob(os.path.join(input_loc, fid[4:12], fid.split('_')[0], "l2a", "*l2a_mask_*.hdr"))[0]
-        glt_file = glob.glob(os.path.join(input_loc, fid[4:12], fid.split('_')[0], "l1b", "*l1b_glt_*.hdr"))[0]
-    except Exception as e: 
-        print('No path found for FID')
+    os.makedirs(output_directory, exist_ok=True)
 
     ############ Generate QC and save to COG ############
 
-    # Orthorectify EMIT mask file 
-    ortho_mask_file = os.path.join(output_loc, fid + '_ortho_mask.tif')
-    apply_glt_noClick(glt_file, mask_file, ortho_mask_file, nodata_value=-9999, bands=None, output_format='tif', glt_nodata_value=glt_nodata_value)
+    # Orthorectify EMIT mask file
+    ortho_mask_file = os.path.join(output_directory, acq_id + 'l2amask_ortho.tif')
+    apply_glt_noClick(glt_file, l2a_mask_file, ortho_mask_file, nodata_value=-9999,
+                      bands=None, output_format='tif', glt_nodata_value=glt_nodata_value)
 
-    # Write ortho'ed extent to json file 
-    json_filename = os.path.join(output_loc, fid + '_extent.json')
+    # Write ortho'ed extent to json file
+    json_filename = os.path.join(output_directory, acq_id + '_extent.json')
     geotiff_extent_to_geojson(ortho_mask_file, json_filename)
 
     # Urban mask and orth
-    urban_out_file = os.path.join(output_loc, fid + '_ortho_urban.tif')
-    ref_path = ortho_mask_file
-    meta = urban_mask_cog(ortho_mask_file, urban_out_file, json_filename, urban_data_loc, ref_path)
+    urban_out_file = os.path.join(output_directory, acq_id + '_ortho_urban.tif')
+    meta = urban_mask_cog(ortho_mask_file, urban_out_file, json_filename, urban_data, ortho_mask_file)
 
     # Coastal mask and ortho
-    coastal_out_file = os.path.join(output_loc, fid + '_ortho_coastal.tif')
-    coastal_mask_cog(ortho_mask_file, json_filename, coastal_out_file, coastal_data_loc, meta)
-    
-    # NDSI (generate and then ortho)
-    ndsi_file = os.path.join(output_loc, fid + '_ndsi.tif')
-    ndsi(rfl_file, ndsi_file)
+    coastal_out_file = os.path.join(output_directory, acq_id + '_ortho_coastal.tif')
+    coastal_mask_cog(ortho_mask_file, json_filename, coastal_out_file, coastal_data, meta)
 
-    ndsi_ortho_file = os.path.join(output_loc, fid + '_ortho_ndsi.tif')
+    # NDSI (generate and then ortho)
+    ndsi_file = os.path.join(output_directory, acq_id + '_ndsi.tif')
+    ndsi_cog(rfl_file, ndsi_file)
+
+    ndsi_ortho_file = os.path.join(output_directory, acq_id + '_ortho_ndsi.tif')
     apply_glt_noClick(glt_file, ndsi_file, ndsi_ortho_file, nodata_value=-9999, bands=None, output_format='tif', glt_nodata_value=glt_nodata_value)
 
-    ## Convert to singleband COG 
+    ## Convert to singleband COG
     _, urban_mask = open_tif(urban_out_file)
     _, coastal_mask = open_tif(coastal_out_file)
     _, ndsi_mask = open_tif(ndsi_ortho_file)
@@ -107,18 +86,10 @@ def process_files(fid, input_loc, output_loc, urban_data_loc, coastal_data_loc, 
     emit_cirrus = emit_mask[:,:,1]
     emit_water = emit_mask[:,:,2]
 
-<<<<<<< HEAD
     ## Convert to singleband
     singleband_raster_hierarchy(emit_cloud, emit_cirrus, emit_water,
                                 urban_mask[:,:,0], ndsi_mask[:,:,0], coastal_mask[:,:,0],
                                 frcov_mask, emit_meta)
-=======
-    ## Convert to singleband 
-    single_band_stack = os.path.join(output_loc, fid + '_ortho_hierarchy.tif')
-    singleband_raster_hierarchy(emit_cloud, emit_cirrus, emit_water, 
-                                urban_mask[:,:,0], ndsi_mask[:,:,0], coastal_mask[:,:,0], 
-                                single_band_stack, emit_meta)
->>>>>>> parent of 2827bbc (Filepath and argument updates)
 
     ## Clean up and remove intermediary files
     os.remove(ndsi_file)
@@ -128,23 +99,23 @@ def process_files(fid, input_loc, output_loc, urban_data_loc, coastal_data_loc, 
     os.remove(urban_out_file)
     os.remove(json_filename)
 
-#### 
+####
 
 def geotiff_extent_to_geojson(tiff_path, geojson_path):
     """
     Extracts the bounding box of a GeoTIFF file and saves it as a GeoJSON file.
-    
+
     Args:
         tiff_path (str): Path to the input GeoTIFF file.
         geojson_path (str): Path to the output GeoJSON file.
-    """ 
+    """
 
-    # Open raster and get extent of valid data 
+    # Open raster and get extent of valid data
     with rasterio.open(tiff_path) as src:
         bounds = src.bounds
         crs = src.crs
 
-    # Extract bounding box 
+    # Extract bounding box
     polygon = {
         "type": "Polygon",
         "coordinates": [[
@@ -169,42 +140,37 @@ def geotiff_extent_to_geojson(tiff_path, geojson_path):
         "features": [feature]
     }
     with open(geojson_path, 'w') as f:
-            json.dump(geojson, f, indent=2)
+        json.dump(geojson, f, indent=2)
 
 
 def singleband_raster_hierarchy(cloud, cirrus, water, urban, snow_ice, coastal, out_file, meta):
     """
     Condense multiple row x col arrays into a single band COG with a hierarchical classification process
-    
-    Writes single band COG with following values: 
+
+    Writes single band COG with following values:
         Cloud (EMIT cloud + cirrus flag)    = 1
         Urban                               = 2
         Water (EMIT water + coastal mask)   = 3
         Snow/Ice                            = 4
 
-    # --- hierarchy order --- # 
-    if cloud or cirrus or (cloud + cirrus): 
+    # --- hierarchy order --- #
+    if cloud or cirrus or (cloud + cirrus):
         QC = 1
-    if urban: 
+    if urban:
         QC = 2
-    if water or coastal or (water + coastal): 
+    if water or coastal or (water + coastal):
         QC = 3
-    if snow/ice: 
+    if snow/ice:
         QC = 4
 
-    Args: 
+    Args:
         cloud, cirrus, water, urban, snow_ice, coastal (arr): 6 row x col arrays, where 1 = value to be masked out for that variable
         out_file (str): path to save singleband raster output
         meta (GenericGeoMetadata): An object containing the wavelengths and FWHM.
     """
 
-<<<<<<< HEAD
     # apply hierarchical categorization logic
     result = np.zeros((cloud.shape[0], cloud.shape[1]), dtype=np.int16)
-=======
-    # apply hierarchical categorization logic 
-    result = np.zeros((cloud.shape[0], cloud.shape[1]), dtype=np.uint8)
->>>>>>> parent of 2827bbc (Filepath and argument updates)
     result[(cloud == 1) | (cirrus == 1)] = 1
     result[(urban == 1) & (result == 0)] = 2
     result[((water == 1) | (coastal == 1)) & (result == 0)] = 3
@@ -216,16 +182,16 @@ def singleband_raster_hierarchy(cloud, cirrus, water, urban, snow_ice, coastal, 
 
 def warp_array_to_ref(array, source_ds, ref_path, nodata_value=0):
     """
-    Warp input array to match projection/resolution of reference gtiff 
+    Warp input array to match projection/resolution of reference gtiff
 
-    Args: 
+    Args:
         array (np arr): input array to reproject
-        source_ds (gdal dataset): input dataset of array 
-        ref_path (str): path to reference tif 
+        source_ds (gdal dataset): input dataset of array
+        ref_path (str): path to reference tif
         nodata_value (int): nodata value to for gdal dataset
 
-    Out: 
-        out_arr (np arr): gdalwarped input array 
+    Out:
+        out_arr (np arr): gdalwarped input array
     """
 
     ref_ds = gdal.Open(ref_path)
@@ -243,14 +209,14 @@ def warp_array_to_ref(array, source_ds, ref_path, nodata_value=0):
     gt = ref_ds.GetGeoTransform()
     bounds = (gt[0], gt[3] + gt[5]*ref_ds.RasterYSize, gt[0] + gt[1]*ref_ds.RasterXSize, gt[3])
 
-    # apply gdal transform to desired reference dataset  
-    warp_options = gdal.WarpOptions(format='MEM', 
-                            dstSRS=ref_ds.GetProjection(), 
+    # apply gdal transform to desired reference dataset
+    warp_options = gdal.WarpOptions(format='MEM',
+                            dstSRS=ref_ds.GetProjection(),
                             outputBounds=bounds,
-                            width=ref_ds.RasterXSize, 
-                            height=ref_ds.RasterYSize, 
-                            srcNodata=nodata_value, 
-                            dstNodata=nodata_value, 
+                            width=ref_ds.RasterXSize,
+                            height=ref_ds.RasterYSize,
+                            srcNodata=nodata_value,
+                            dstNodata=nodata_value,
                             resampleAlg='bilinear')
     warped = gdal.Warp('', mem_ds, options=warp_options)
     out_arr = warped.ReadAsArray().reshape(ref_ds.RasterYSize, ref_ds.RasterXSize,1)
@@ -261,29 +227,29 @@ def warp_array_to_ref(array, source_ds, ref_path, nodata_value=0):
 def urban_mask_cog(ortho_file, out_file, json_file, urban_data, ref_path, output_res = 0.000542232520256, nodata_value = 0):
     """
     Generate mask of urban/built-up areas and save as COG
-    
-    Args: 
-        ortho_file (str): path to orthorectified EMIT mask file 
+
+    Args:
+        ortho_file (str): path to orthorectified EMIT mask file
         out_file (str): path to save urban area COG
         json_file (str): path to json of EMIT tile extent
         urban_data (str): path to ESA worldcover dataset (.vrt/tif)
         ref_path (str): path to reference tif to align data with
-        output_res (float): default to EMIT res 
+        output_res (float): default to EMIT res
         nodata_value (int): nodata value for gdal dataset
 
-    Out: 
+    Out:
         meta (GenericGeoMetadata): An object containing the wavelengths and FWHM.
     """
 
     print(f"Running Urban Masking on {json_file}")
 
-    # Get SRS info from orthoed file 
+    # Get SRS info from orthoed file
     ds_mask = gdal.Open(ortho_file)
     if ds_mask is None:
         raise FileNotFoundError(f"Could not open {ortho_file}")
     wkt = ds_mask.GetProjection()
 
-    # Build warp options -- coarse clipping to bounding box 
+    # Build warp options -- coarse clipping to bounding box
     temp_file= os.path.join(os.path.dirname(out_file), os.path.splitext(os.path.basename(out_file))[0]) + '_TEMPclipped.tif'
     warp_options = gdal.WarpOptions(
         cutlineDSName=json_file,
@@ -296,14 +262,14 @@ def urban_mask_cog(ortho_file, out_file, json_file, urban_data, ref_path, output
     gdal.Warp(destNameOrDestDS=temp_file, srcDSOrSrcDSTab=urban_data, options=warp_options)
 
     # Generate geotiff mask of urban areas (50 in ESA worldcover)
-    meta, _ = open_tif(temp_file) 
+    meta, _ = open_tif(temp_file)
     ds = gdal.Open(temp_file)
     band = ds.GetRasterBand(1)
     urban_array = band.ReadAsArray()
     result = np.logical_and(urban_array >= 0, urban_array == 50).astype(np.uint8)
     result = result.reshape((result.shape[0], result.shape[1], 1))
 
-    # Exact clipping to valid data points in EMIT data mask  
+    # Exact clipping to valid data points in EMIT data mask
     emit_mask = (ds_mask.GetRasterBand(1).ReadAsArray() != -9999)
     emit_mask = emit_mask.reshape((emit_mask.shape[0], emit_mask.shape[1], 1))
     result_clip = np.where(emit_mask, result, 0)
@@ -313,19 +279,20 @@ def urban_mask_cog(ortho_file, out_file, json_file, urban_data, ref_path, output
     write_cog(out_file, result_warp, meta)
 
     os.remove(temp_file)
-    return meta 
+    return meta
 
-def coastal_mask_cog(ortho_file, json_file, out_file, coastal_data, meta, output_res = 0.000542232520256): 
+
+def coastal_mask_cog(ortho_file, json_file, out_file, coastal_data, meta, output_res = 0.000542232520256):
     """
     Generate mask of coastal water features and save as COG
-    
+
     Args:
-        ortho_file (str): path to orthorectified EMIT mask file 
+        ortho_file (str): path to orthorectified EMIT mask file
         json_file (str): path to json of EMIT tile extent
         out_file (str): path to save coastal area COG
         coastal_data (str): path to GSHHS coastal dataset (.shp)
         meta (GenericGeoMetadata):  An object containing the wavelengths and FWHM.
-        output_res (float): default to EMIT res 
+        output_res (float): default to EMIT res
     """
 
     print(f"Running Coastal Masking on {json_file}")
@@ -340,34 +307,34 @@ def coastal_mask_cog(ortho_file, json_file, out_file, coastal_data, meta, output
     width, height = int((maxx - minx) / output_res), int((maxy - miny) / output_res)
     transform = Affine.translation(minx, maxy) * Affine.scale(output_res, -output_res)
 
-    if clipped.empty:  # No intersecting coastal features -- return mask of 0 
+    if clipped.empty:  # No intersecting coastal features -- return mask of 0
         raster = np.zeros((height, width), dtype=np.uint8)
-    
-    else:  
+
+    else:
         #  Mask for inside EMIT tile = 1, outside tile = 0 --> needed to prevent classification as water in corners
         ds_mask = gdal.Open(ortho_file)
         if ds_mask is None:
             raise FileNotFoundError(f"Could not open {ortho_file}")
         tile_mask = (ds_mask.GetRasterBand(1).ReadAsArray() != -9999)
 
-        # Land = 0,  Water = 1 
+        # Land = 0,  Water = 1
         coastal_raster = rasterize(
             [(geom, 0) for geom in clipped.geometry if not geom.is_empty],
             out_shape=(height, width),
             transform=transform,
-            fill=1, 
+            fill=1,
             dtype=np.uint8
         )
         raster = coastal_raster * tile_mask
 
-    # Write coastal mask to COG 
+    # Write coastal mask to COG
     result = raster.reshape((height, width, 1))
     write_cog(out_file, result, meta)
 
 
-def ndsi(input_file, output_file, green_wl = 560, swir_wl = 1600, green_width = 0, swir_width = 0, threshold = 0.4, ortho=True):
+def ndsi_cog(input_file, output_file, green_wl = 560, swir_wl = 1600, green_width = 0, swir_width = 0, threshold = 0.4, ortho=True):
     """
-    Calculate NDSI (normalized difference snow index) and save as cog 
+    Calculate NDSI (normalized difference snow index) and save as cog
 
     Args:
         input_file (str): Path to the EMIT reflectance
@@ -391,17 +358,17 @@ def ndsi(input_file, output_file, green_wl = 560, swir_wl = 1600, green_width = 
     ndsi = ndsi.reshape((ndsi.shape[0], ndsi.shape[1], 1))
 
     ndsi[ndsi > threshold] = 1
-    ndsi[ndsi <= threshold] = 0   
+    ndsi[ndsi <= threshold] = 0
 
     write_cog(output_file, ndsi, meta, ortho=ortho)
 
 
-## NOT CURRENTLY USED 
-def singleband_raster_unique(raster_stack, out_file): 
+## NOT CURRENTLY USED
+def singleband_raster_unique(raster_stack, out_file):
     """
-    Leverage distinct sums (aka 2^n Sidon set) to condense a multiband raster into a single band without losing 
+    Leverage distinct sums (aka 2^n Sidon set) to condense a multiband raster into a single band without losing
     information about pixels that are QC flagged for multiple reasons (e.g., both a cloud and an urban pixel).
-    There are 63 distinct combinations for the current 6 band QC product. 
+    There are 63 distinct combinations for the current 6 band QC product.
 
     If a given image has N bands, then the values attributed to each band in the single-band raster are {2^0, 2^1, 2^2, ... 2^N}
 
@@ -424,13 +391,8 @@ def singleband_raster_unique(raster_stack, out_file):
         '-E', raster_stack, '--E_band=5',
         '-F', raster_stack, '--F_band=6',
         '--calc', '(A*1)+(B*2)+(C*4)+(D*8)+(E*16)+(F*32)',
-<<<<<<< HEAD
         '--outfile', out_file,
         '--NoDataValue=255',
-=======
-        '--outfile', out_file, 
-        '--NoDataValue=0',
->>>>>>> parent of 2827bbc (Filepath and argument updates)
         '--type=Int8',
         '--co', 'COMPRESS=LZW', ## remainder are from write_cog code
         '--co', 'BIGTIFF=YES',
@@ -440,7 +402,7 @@ def singleband_raster_unique(raster_stack, out_file):
         '--co', 'BLOCKYSIZE=256',
         '--overwrite'
     ], check=True)
-        
+
 
 ##########
 
