@@ -13,7 +13,6 @@ from rasterio.features import rasterize
 from mosaic import apply_glt_noClick
 from spec_io import load_data, write_cog, open_tif
 
-
 ###
 @click.command()
 @click.argument('rfl_file', type=str, required=True)
@@ -23,7 +22,7 @@ from spec_io import load_data, write_cog, open_tif
 @click.option('--urban_data', type=click.Path(exists=True), default="/store/shared/landcover/complete_landcover.vrt")
 @click.option('--coastal_data', type=click.Path(exists=True), default="/store/shared/landcover/GSHHS_f_L1.shp")
 @click.option('--glt_nodata_value', type=int, default = 0)
-def process_files(rfl_file, l2a_mask_file, glt_file, frcov_mask, urban_data, coastal_data, glt_nodata_value):
+def create_masks(rfl_file, l2a_mask_file, glt_file, frcov_mask, urban_data, coastal_data, glt_nodata_value):
     """
     Generate QC product for EMIT fractional cover
 
@@ -411,7 +410,7 @@ def singleband_raster_unique(raster_stack, out_file):
 def cli():
     pass
 
-cli.add_command(process_files)
+cli.add_command(create_masks)
 
 if __name__ == '__main__':
     cli()
