@@ -152,7 +152,7 @@ def apply_mask(frcov_file, frcov_unc_file, mask_file, output_base, glt_file, sof
     rgb = (rgb * 255).astype(np.uint8)
     alpha = np.where(mask[:,:,0] == -9999, 0, 255).astype(np.uint8)
     rgba = np.dstack([rgb, alpha])
-    png_path = os.path.join(output_directory, output_base + '_frcov_rgb.png')
+    png_path = os.path.join(output_directory, output_base + '_frcov.png')
     Image.fromarray(rgba, mode='RGBA').save(png_path)
     
     bare_color = np.array([210, 180, 140], dtype=float)
