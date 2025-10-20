@@ -154,25 +154,7 @@ def apply_mask(frcov_file, frcov_unc_file, mask_file, output_base, glt_file, sof
     rgba = np.dstack([rgb, alpha])
     png_path = os.path.join(output_directory, output_base + '_frcov.png')
     Image.fromarray(rgba, mode='RGBA').save(png_path)
-    
-    bare_color = np.array([210, 180, 140], dtype=float)
-    pv_color = np.array([34, 139, 34], dtype=float)
-    npv_color = np.array([218, 165, 32], dtype=float)
-
-    rgb = (bare[:,:,None] * bare_color +
-           pv[:,:,None] * pv_color +
-           npv[:,:,None] * npv_color)
-
-    nodata_mask = (mask[:,:,0] == -9999)
-    rgb[nodata_mask] = 0
-    rgb = np.clip(rgb, 0, 255).astype(np.uint8)
-    alpha = np.where(nodata_mask, 0, 255).astype(np.uint8)
-    rgba = np.dstack([rgb, alpha])
-    
-    png_path = os.path.join(output_directory, output_base + '_frcov_col.png')
-    Image.fromarray(rgba, mode='RGBA').save(png_path)
- 
- 
+     
 def main():
     parser = argparse.ArgumentParser(description='Apply GLT and mask to fractional cover data')
     parser.add_argument('frcov_file', type=str)
