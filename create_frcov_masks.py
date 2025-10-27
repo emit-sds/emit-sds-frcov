@@ -13,7 +13,6 @@ from rasterio.features import rasterize
 from mosaic import apply_glt_noClick
 from spec_io import load_data, write_cog, open_tif
 
-
 ###
 @click.command()
 @click.argument('rfl_file', type=str, required=True)
@@ -23,7 +22,7 @@ from spec_io import load_data, write_cog, open_tif
 @click.option('--urban_data', type=click.Path(exists=True), default="/store/shared/landcover/complete_landcover.vrt")
 @click.option('--coastal_data', type=click.Path(exists=True), default="/store/shared/landcover/GSHHS_f_L1.shp")
 @click.option('--glt_nodata_value', type=int, default = 0)
-def process_files(rfl_file, l2a_mask_file, glt_file, frcov_mask, urban_data, coastal_data, glt_nodata_value):
+def create_masks(rfl_file, l2a_mask_file, glt_file, frcov_mask, urban_data, coastal_data, glt_nodata_value):
     """
     Generate QC product for EMIT fractional cover
 
@@ -35,15 +34,16 @@ def process_files(rfl_file, l2a_mask_file, glt_file, frcov_mask, urban_data, coa
 
     Args:
         acq_id (str):
-        input_loc (path str): path to EMIT reflectance, mask, GLT files
-        output_loc (path str): path to save generated mask output files
-        urban_data (path str): path to ESA worldcover dataset (.vrt/tif)
-        coastal_data (path str): path to GSHHS coastal dataset (.shp)
-        glt_nodata_value (int): defaults to 0 (nodata for .envi files)
+        rfl_file (str): path to EMIT reflectance file
+        l2a_mask_file (str): path to EMIT L2A mask file
+        glt_file (str): path to EMIT GLT file
+        frcov_mask (str): path of output fractional cover mask file
+        urban_data (str): path to ESA WorldCover datase
+        coastal_data (str): path to GSHHS coastal shapefile
+        glt_nodata_value (int): nodata value for GLT file (default=0)
     """
 
     output_directory = os.path.dirname(frcov_mask)
-    glt_nodata_value = 0
 
     acq_id = os.path.basename(l2a_mask_file).split('_')[0]
 
@@ -81,15 +81,14 @@ def process_files(rfl_file, l2a_mask_file, glt_file, frcov_mask, urban_data, coa
     _, ndsi_mask = open_tif(ndsi_ortho_file)
 
     emit_meta, emit_mask = open_tif(ortho_mask_file)
-    emit_cloud = emit_mask[:,:,0]
+    emit_cloud = emit_mask[:,:,9] # SpecTf cloud flag
     emit_cirrus = emit_mask[:,:,1]
     emit_water = emit_mask[:,:,2]
 
     ## Convert to singleband
-    single_band_stack = os.path.join(frcov_mask)
     singleband_raster_hierarchy(emit_cloud, emit_cirrus, emit_water,
                                 urban_mask[:,:,0], ndsi_mask[:,:,0], coastal_mask[:,:,0],
-                                single_band_stack, emit_meta)
+                                frcov_mask, emit_meta)
 
     ## Clean up and remove intermediary files
     os.remove(ndsi_file)
@@ -170,13 +169,14 @@ def singleband_raster_hierarchy(cloud, cirrus, water, urban, snow_ice, coastal, 
     """
 
     # apply hierarchical categorization logic
-    result = np.zeros((cloud.shape[0], cloud.shape[1]), dtype=np.uint8)
+    result = np.zeros((cloud.shape[0], cloud.shape[1]), dtype=np.int16)
     result[(cloud == 1) | (cirrus == 1)] = 1
     result[(urban == 1) & (result == 0)] = 2
     result[((water == 1) | (coastal == 1)) & (result == 0)] = 3
     result[(snow_ice == 1) & (result == 0)] = 4
 
     result = result.reshape((result.shape[0], result.shape[1], 1))
+    result[cloud == -9999] = -9999
     write_cog(out_file, result, meta)
 
 def warp_array_to_ref(array, source_ds, ref_path, nodata_value=0):
@@ -391,7 +391,7 @@ def singleband_raster_unique(raster_stack, out_file):
         '-F', raster_stack, '--F_band=6',
         '--calc', '(A*1)+(B*2)+(C*4)+(D*8)+(E*16)+(F*32)',
         '--outfile', out_file,
-        '--NoDataValue=0',
+        '--NoDataValue=255',
         '--type=Int8',
         '--co', 'COMPRESS=LZW', ## remainder are from write_cog code
         '--co', 'BIGTIFF=YES',
@@ -410,7 +410,7 @@ def singleband_raster_unique(raster_stack, out_file):
 def cli():
     pass
 
-cli.add_command(process_files)
+cli.add_command(create_masks)
 
 if __name__ == '__main__':
     cli()
