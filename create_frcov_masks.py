@@ -14,7 +14,9 @@ from mosaic import apply_glt_noClick
 from spec_io import load_data, write_cog, open_tif
 
 
-###
+# Example call -- python create_frcov_masks.py process-files emit20250824t005342_o23601_s001 /home/colemanr/Unmixing/outputs/
+
+### 
 @click.command()
 @click.argument('rfl_file', type=str, required=True)
 @click.argument('l2a_mask_file', type=str, required=True)
@@ -79,6 +81,8 @@ def process_files(rfl_file, l2a_mask_file, glt_file, frcov_mask, urban_data, coa
     _, urban_mask = open_tif(urban_out_file)
     _, coastal_mask = open_tif(coastal_out_file)
     _, ndsi_mask = open_tif(ndsi_ortho_file)
+    _, emit_onboard_cloud = open_tif(ortho_rdn_file)
+
 
     emit_meta, emit_mask = open_tif(ortho_mask_file)
     emit_cloud = emit_mask[:,:,0]
@@ -91,13 +95,14 @@ def process_files(rfl_file, l2a_mask_file, glt_file, frcov_mask, urban_data, coa
                                 urban_mask[:,:,0], ndsi_mask[:,:,0], coastal_mask[:,:,0],
                                 single_band_stack, emit_meta)
 
-    ## Clean up and remove intermediary files
+    # Clean up and remove intermediary files
     os.remove(ndsi_file)
     os.remove(ndsi_ortho_file)
     os.remove(ortho_mask_file)
     os.remove(coastal_out_file)
     os.remove(urban_out_file)
     os.remove(json_filename)
+    os.remove(ortho_rdn_file)
 
 ####
 
@@ -143,7 +148,7 @@ def geotiff_extent_to_geojson(tiff_path, geojson_path):
         json.dump(geojson, f, indent=2)
 
 
-def singleband_raster_hierarchy(cloud, cirrus, water, urban, snow_ice, coastal, out_file, meta):
+def singleband_raster_hierarchy(cloud, cirrus, water, onboard_cloud, urban, snow_ice, coastal, out_file, meta):
     """
     Condense multiple row x col arrays into a single band COG with a hierarchical classification process
 
@@ -171,7 +176,7 @@ def singleband_raster_hierarchy(cloud, cirrus, water, urban, snow_ice, coastal, 
 
     # apply hierarchical categorization logic
     result = np.zeros((cloud.shape[0], cloud.shape[1]), dtype=np.uint8)
-    result[(cloud == 1) | (cirrus == 1)] = 1
+    result[(cloud == 1) | (cirrus == 1) | (onboard_cloud == -9990) | (onboard_cloud == -9997)] = 1
     result[(urban == 1) & (result == 0)] = 2
     result[((water == 1) | (coastal == 1)) & (result == 0)] = 3
     result[(snow_ice == 1) & (result == 0)] = 4
