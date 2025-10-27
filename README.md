@@ -153,7 +153,7 @@ Note that the QA flags are not mutually exclusive and also the QA flags are not 
 
 ### 6.2 Uncertainties
 
-To estimate the uncertainty of the Monte Carlo SMA results, we run 50 Monte Carlo simulations. During each simulation, the endmember selection is seeded differently (representing model error) and the reflectance is perturbed by a (per-wavelength) random deviation proportionate to the channelized reflectance uncertainty provided by L2A. The standard deviation of the soil fractional cover from the different simulations (𝜎 <_>𝑠 𝑗) is then used as the uncertainty.
+To estimate the uncertainty of the Monte Carlo SMA results, we run 20 Monte Carlo simulations. During each simulation, the endmember selection is seeded differently (representing model error) and the reflectance is perturbed by a (per-wavelength) random deviation proportionate to the channelized reflectance uncertainty provided by L2A. The standard deviation of the soil fractional cover from the different simulations (𝜎 <_>𝑠 𝑗) is then used as the uncertainty.
 
 We neglect the uncertianty assocaited with QA assessment for the purposes of providing a mask for this product.
 
