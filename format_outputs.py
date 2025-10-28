@@ -61,7 +61,7 @@ def add_metadata_to_cog(input_file, product_metadata, software_build_version, pr
         "platform": "ISS",
         "Conventions": "CF-1.63",
         "institution": "NASA Jet Propulsion Laboratory/California Institute of Technology",
-        "license": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "license": "https://www.earthdata.nasa.gov/engage/open-data-services-software-policies/data-use-guidance",
         "naming_authority": "LPDAAC",
         "date_created": datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ"),
         "keywords_vocabulary": "NASA Global Change Master Directory (GCMD) Science Keywords",
