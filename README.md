@@ -64,8 +64,8 @@ two scenarios is shown in Figure 4.2.-1.
 | Endmember Selection Strategy | Class-even, Random | Class-even |
 | Normalization | None, Brightness, 1070, 1500, 1756, 2030 | Brightness |
 | Maximum Number of Combinations (MESMA only) | 10, 100, 500, 1000 | NA |
-| Number of Endmembers per Class per Bootstrap Draw (SMA only) | 5, 10, 30, 50 | 10 |
-| Number of Bootstrap Draws | 1, 5, 10, 20, 50, 100, 200 | 50 |
+| Number of Endmembers per Class per Bootstrap Draw (SMA only) | 5, 10, 30, 50 | 30 |
+| Number of Bootstrap Draws | 1, 5, 10, 20, 50, 100, 200 | 20 |
 
 
 
