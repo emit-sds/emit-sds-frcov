@@ -1,6 +1,6 @@
 # EMIT Fractional Cover Product Delivery - Algorithm Theoretical Basis Document (ATBD)
 
-*Philip Brodrick*<sup>1</sup>, *Francisco Ochoa*<sup>1,2</sup>, *Greg Okin*<sup>2</sup>, *Red Willow Coleman*<sup>1,2</sup>, *K.D. Chadwick*<sup>1</sup>
+*Philip Brodrick*<sup>1</sup>, *Francisco Ochoa*<sup>1,2</sup>, *Gregory S. Okin*<sup>2</sup>, *Red Willow Coleman*<sup>1,2</sup>, *K.D. Chadwick*<sup>1</sup>
 
 <sup>1</sup>Jet Propulsion Laboratory, California Institute of Technology
 <sup>2</sup>University of California, Los Angeles
@@ -9,7 +9,7 @@ Corresponding author: Philip Brodrick (philip.brodrick@jpl.nasa.gov)
 
 **Key Points:**
    1. Please note that this ATBD will be updated on an ongoing basis as the EMIT extended mission progresses. This is intended to be a place where the community can find the most up-to-date information on the current plans for algorithm development and offer contributions.
-   2. This is a three component model with a series of quality assessment (QA) flags. The mission will be producing a more detailed V2 of this product which will supersede this version during FY26. 
+   2. This is a three-component model with a series of quality assessment (QA) flags. The mission will be producing a more detailed V2 of this product which will supersede this version during FY26. 
    3. If you identify issues with this product not current outlined in the Known Issues section, please contribute that information here to help the community.
 
 **Version:** 1.0
@@ -36,7 +36,7 @@ This is Version 1.0 of the EMIT fractional cover and fractional cover quality as
 Mineral dust aerosols originate as soil particles lifted into the atmosphere by wind erosion. Mineral dust created by human activity makes a large contribution to the uncertainty of direct radiative forcing (RF) by anthropogenic aerosols (USGCRP and IPCC). Mineral dust is a prominent aerosol constituent around the globe. However, we have a poor understanding of its direct radiative effect, partly due to uncertainties in the dust mineral composition. Dust radiative forcing is highly dependent on its mineral-specific absorption properties. The current range of iron oxide abundance in dust source models translates into a large range of values, even changing the sign of the forcing (-0.15 to 0.21 W/m2) predicted by Earth System Models (ESMs) (Li et al., 2020). The National Aeronautics and Space Administration (NASA) selected the Earth Surface Mineral Dust Source Investigation (EMIT) to close this knowledge gap. EMIT is an instrument on the International Space Station (ISS) that can directly measure and map the soil mineral composition of critical dust-forming regions worldwide.
 
 ## 3 Context/Background
-As part of the EMIT mission, a three-class fractional cover product is being developed to provide estimates of the fractional cover of photosynthetic vegetation (PV or GV), non-photosynthetic vegetation (NPV), and bare soil (S) within each 60 m EMIT pixel. This product will be used to help interpret the surface mineralogy results from the EMIT mission, as well as provide a valuable dataset for the broader science community.
+As part of the EMIT mission, a three-class fractional cover product is being developed to provide estimates of the fractional cover of photosynthetic vegetation (PV or GV), non-photosynthetic vegetation (NPV), and bare soil (S) within each 60m EMIT pixel. This product will be used to help interpret the surface mineralogy results from the EMIT mission, as well as provide a valuable dataset for the broader science community.
 
 Example spectra from the three classes are shown in Figure 3 from Ochoa et al, 2025. 
 
@@ -51,13 +51,13 @@ The fractional cover product described here is a three component model which is 
 ## 4 Algorithm Description
 
 ### 4.1 Scientific Theory
-The fractional cover product is derived using a Monte Carlo Spectral Unmixing approach. This approach uses a spectral library of endmembers to estimate the fractional cover of each component within each pixel. The spectral library used for the EMIT fractional cover product is derived from field and laboratory measurements of soils and vegetation. The spectral library includes endmembers for photosynthetic vegetation, non-photosynthetic vegetation, and bare soil. The spectral library is described in detail in Ochoa et al, 2025. 
+The fractional cover product is derived using a spectral unmixing approach that utilizes multiple endmembers of each class (PV, NPV, and soil) in different Monte Carlo cover estimations as described by Ochoa et al. (2025) who called it EndMember Combination Monte Carlo, E(MC)<sup>2</sup>, unmixing. This approach requires a library of spectra of the component classes which is described in detail in Ochoa et al. (2025).
 
 ### 4.2 Mathematical Theory
-To estimate fractional cover, we use a Monte Carlo Spectral Unmixing strategy, based on decades of literature (e.g., Roberts et al. 1998, Asner and Lobell 2000, and Dennison et al., 2019). Several key parameters, including the endmember selection strategy, observation normalization techniques, and the number of bootstrap samples were investigated. Simulation experiments comparing over one million synthetic spectra constructed with endmember holdout sets were utilized to select parameter values (generally following the approach of Okin et al., 2015). Selected parameter values are shown in Table 4.2.1-1. Parameters were chosen based on a combination of mean squared error, prediction variance, prediction bias, and computation time. All values can be tested through parameter selection in the unmix.jl script provided in the SpectralUnmixing EMIT SDS repository (https://github.com/emit-sds/SpectralUnmixing). A sample comparison between
+To estimate fractional cover, we use a spectral unmixing approach, based on decades of literature (e.g., Roberts et al. 1998, Asner and Lobell 2000, and Dennison et al., 2019). As described in Ochoa et al. (2025), several key parameters, including the endmember selection strategy, observation normalization techniques, and the number of bootstrap samples were investigated. Simulation experiments comparing over one million synthetic spectra constructed with endmember holdout sets were utilized to select parameter values (generally following the approach of Okin et al., 2015). Selected parameter values are shown in Table 4.2-1. Parameters were chosen based on a combination of mean squared error, prediction variance, prediction bias, and computation time. All values can be tested through parameter selection in the unmix.jl script provided in the SpectralUnmixing EMIT SDS repository (https://github.com/emit-sds/SpectralUnmixing). A sample comparison between
 two scenarios is shown in Figure 4.2.-1.
 
-**Table 4.2-1.** _Unmixing parameter value selection_
+**Table 4.2-1.** _Unmixing parameter value selection in E(MC)<sup>2</sup>_
 | Parameter Name | Tested Values | Selected Values |
 | --- | --- | --- |
 | Endmember Selection | MESMA, Monte Carlo SMA | Monte Carlo SMA |
@@ -70,7 +70,7 @@ two scenarios is shown in Figure 4.2.-1.
 
 
 ![Alt text for the figure](figs/Comparisons.png "Comparisons")
-*Figure 4.2-1: Comparison between two parameter combinations. On top is a Monte Carlo unmixing analysis with 10 endmembers per class per bootstrap draw, brightness normalization, class-even endmember selection, and 50 bootstrap draws. On the bottom is a MESMA-style unmixing analysis with a maximum of 1000 class-even selected endmembers, brightness normalization, and 50 bootstrap draws.*
+*Figure 4.2-1: Comparison between two parameter combinations. On top is the E(MC)<sup>2</sup> unmixing analysis with 10 endmembers per class per bootstrap draw, brightness normalization, class-even endmember selection, and 50 bootstrap draws. On the bottom is a MESMA-style unmixing analysis with a maximum of 1000 class-even selected endmembers, brightness normalization, and 50 bootstrap draws.*
 
 ### 4.3 Fractional Cover Algorithm Input Variables
 
@@ -85,8 +85,8 @@ The required input files for fractional cover production are in Table 4.3-1.
 
 ### 4.4 Fractional Cover Algorithm Output Variables
 The EMIT output data products delivered to the DAAC use their formatting conventions, the system operates internally on data products stored as binary data cubes with detached human-readable ASCII header files. For the fraction cover product, the output variables are: 
-1. Fractional cover, provided as an n x c x 3 BIL interleave data cube, with c columns and n lines. Each channel contains the fractional cover as calculated by Monte Carlo SMA (see section 4.2.1).
-2. Fractional cover uncertainty, provided as an n x c x 3 BIL interleave data cube, with c columns and n lines. Each channel contains the estimated uncertainty of the fraction cover, as defined in section 6.2.
+1. Fractional cover, provided as an n x c x 3 BIL interleave data cube, with c columns and n lines. Each channel contains the fractional cover as calculated by E(MC)<sup>2</sup> (see section 4.2.1). The band order is PV fractional cover (band 1), NPV fractional cover (band 2), and soil fractional cover (band 3).
+2. Fractional cover uncertainty, provided as an n x c x 3 BIL interleave data cube, with c columns and n lines. Each channel contains the estimated uncertainty of the fraction cover, as defined in section 6.2. The band order is PV fractional cover uncertainty (Band 1), NPV fractional cover uncertainty (band 2), and soil fractional cover uncertainty (band 3).
 
 These products are consistent with the auxiliary data products described in the EMIT L3ASA ATBD, section 4.4.2 (Brodrick et al., 2023).
 
@@ -133,7 +133,7 @@ The QA product is a single band cloud-optimized GeoTIFF (COG), where each flagge
  * 3 = Water (red)
  * 4 = Snow/Ice
 
- For pixels that contain multiple QA flags (e.g., a water pixel covered by clouds), the following hierarchy is employed: 
+ For pixels that contain multiple QA flags (e.g., a water pixel covered by clouds), the following hierarchy is employed with lower values taking precedence over higher values: 
  1. If the pixel contains clouds, QA = 1 
  2. If the pixel contains built-up material, QA = 2 
  3. If the pixel contains water or is a coastal pixel, QA = 3
@@ -153,7 +153,7 @@ Note that the QA flags are not mutually exclusive and also the QA flags are not 
 
 ### 6.2 Uncertainties
 
-To estimate the uncertainty of the Monte Carlo SMA results, we run 50 Monte Carlo simulations. During each simulation, the endmember selection is seeded differently (representing model error) and the reflectance is perturbed by a (per-wavelength) random deviation proportionate to the channelized reflectance uncertainty provided by L2A. The standard deviation of the soil fractional cover from the different simulations (𝜎 <_>𝑠 𝑗) is then used as the uncertainty.
+To estimate the uncertainty of the Monte Carlo SMA results, we run 50 Monte Carlo simulations. During each simulation, the endmember selection is seeded differently (representing model error) and the reflectance is perturbed by a (per-wavelength) random deviation proportionate to the channelized reflectance uncertainty provided by L2A. The standard deviation of the soil fractional cover from the different simulations (𝜎 <_>𝑠 𝑗) is then used as the uncertainty, as in Ochoa et al. (2025).
 
 We neglect the uncertainty associated with QA assessment for the purposes of providing a mask for this product.
 
@@ -203,15 +203,16 @@ All code described here is open source.  All publications sponsored by the EMIT 
 
 ## 11 Contact Details
 
-K. Dana Chadwick 
+Gregory S. Okin
 
-ORCID: 0000-0002-5633-4865 
+ORCID: 0000-0002-0484-3537
 
-Email: dana.chadwick@jpl.nasa.gov 
+Email: okin@ucla.edu
 
-Role(s) related to this ATBD: writing - original and revision, methodology, quality assessment. 
+Role(s) related to this ATBD: editing, methodology
 
-Affiliation – Jet Propulsion Laboratory, California Institute of Technology 
+Affiliation – University of California, Los Angeles
+
 
 --
 
@@ -225,6 +226,17 @@ Role(s) related to this ATBD: writing - original and revision, methodology, soft
 
 Affiliation – Jet Propulsion Laboratory, California Institute of Technology 
 
+--
+
+K. Dana Chadwick 
+
+ORCID: 0000-0002-5633-4865 
+
+Email: dana.chadwick@jpl.nasa.gov 
+
+Role(s) related to this ATBD: writing - original and revision, methodology, quality assessment. 
+
+Affiliation – Jet Propulsion Laboratory, California Institute of Technology 
 
 ## References
 
