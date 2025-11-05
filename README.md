@@ -3,7 +3,9 @@
 *Philip Brodrick*<sup>1</sup>, *Francisco Ochoa*<sup>1,2</sup>, *Gregory S. Okin*<sup>2</sup>, *Red Willow Coleman*<sup>1,2</sup>, *K.D. Chadwick*<sup>1</sup>
 
 <sup>1</sup>Jet Propulsion Laboratory, California Institute of Technology
+
 <sup>2</sup>University of California, Los Angeles
+
 
 Corresponding author: Philip Brodrick (philip.brodrick@jpl.nasa.gov)
 
@@ -107,12 +109,12 @@ Flag all pixels identified as "cirrus" or "cloud" by the EMIT L2A Mask product (
 
 #### 4.5.2 Urban
 
-Flag all pixels with an ESA WorldCover raster value of 50 as **urban**, which corresponds to the "built-up" class. ESA WorldCover documentation defines the built-up class as: "Land covered by buildings, roads and other man-made structures such as railroads. Buildings include both residential and industrial building. Urban green (parks, sports facilities) is not included in this class. Waste dump deposits and extraction sites are considered as bare" (Zanaga et al., 2021). 
+Flag all pixels with an ESA WorldCover raster value of 50 as **urban**, which corresponds to the "built-up" class. ESA WorldCover documentation defines the built-up class as: "Land covered by buildings, roads and other man-made structures such as railroads. Buildings include both residential and industrial building. Urban green (parks, sports facilities) is not included in this class. Waste dump deposits and extraction sites are considered as bare" (Zanaga et al., 2021). The 10 m WorldCover built-up class dataset was aggregated to the 60 m EMIT resolution using gdalwarp with bilinear resampling. 
 
 
 #### 4.5.3 Water
 
-Flag all pixels identified as "water" by the EMIT L2A Mask product (Green, 2022a) and all pixels that intersect with the GSHHG global database of coastlines and rivers (Wessel and Smith, 1996) as **water**. 
+Flag all pixels identified as "water" by the EMIT L2A Mask product (Green, 2022a) and all pixels that intersect with the GSHHG global database of coastlines and rivers (Wessel and Smith, 1996) as **water**. Nearest-neighbor resampling is used to find intersecting EMIT pixels with the GSHHG vector dataset. 
 
 #### 4.5.4 Snow/Ice
 
