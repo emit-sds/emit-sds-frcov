@@ -24,14 +24,8 @@ Corresponding author: Philip Brodrick (philip.brodrick@jpl.nasa.gov)
 
 ## Plain Language Summary
 
-The terrestrial surface of the Earth is comprised of many substances. Using imaging spectroscopy, we work to classify
-these substances into groups in order to help with the interpretation of various algorithms. In this Version 1 of the
-EMIT Fractional Cover Product, we are focused on being able to determine the fractions comprised of bare rock/soil
-(areas where mineral determination algorithms are appropriate for interpretation), photosynthetic vegetation (largely 
-identified by their characteristic red edge, chlorophyll absorptions, and low reflectance in the SWIR, appropriate for 
-interpretation of trait estimation algorithms), and non-photosynthetic vegetation (which can include dead vegetation, 
-leaf litter, wood, some lichens and biocrusts). All other surface types, as well as areas that are obscured by clouds, 
-we seek to flag using the QC bands associated with this product.
+The terrestrial surface of the Earth is comprised of many substances. Using imaging spectroscopy, we work to classify these substances into groups in order to help with the interpretation of various algorithms. In this Version 1 of the EMIT Fractional Cover Product, we are focused on being able to determine the fractions comprised of bare rock/soil (areas where mineral determination algorithms are appropriate for interpretation), photosynthetic vegetation (largely 
+identified by their characteristic red edge, chlorophyll absorptions, and low reflectance in the SWIR, appropriate for interpretation of trait estimation algorithms), and non-photosynthetic vegetation (which can include dead vegetation, leaf litter, wood, some lichens and biocrusts). All other surface types, as well as areas that are obscured by clouds, we seek to flag using the QC bands associated with this product.
 
 We are providing this Algorithm Theoretical Basis Document in a github markdown format in order to provide a record of ongoing updates as algorithms improved via the commit record, as well as allowing the community to engage more directly in the process of documentation in keeping with NASA's commitment to open science. 
 
@@ -315,3 +309,39 @@ Hyperspectral Imager Spectra.</i> Remote Sensing, 11(18), p.2072.
 
 * Zanaga, D., Van De Kerchove, R., De Keersmaecker, W., Souverijns, N., Brockmann, C., Quast, R., Wevers, J., Grosu, A., Paccini, A., Vergnaud, S., Cartus, O., Santoro, M., Fritz, S., Georgieva, I., Lesiv, M., Carter, S., Herold, M., Li, Linlin, Tsendbazar, N.E., Ramoino, F., Arino, O., 2021. <i>ESA WorldCover 10 m 2020 v100</i>. https://doi.org/10.5281/zenodo.5571936
 
+
+## Acronyms
+
+| Acronym | Definition |
+| --- | --- |
+| ATBD | Algorithm Theoretical Basis Document |
+| ASCII | American Standard Code for Information Interchange |
+| BIL | Band Interleaved by Line |
+| COG | Cloud-Optimized GeoTIFF |
+| DAAC | Distributed Active Archive Center |
+| E(MC)<sup>2</sup> | Ensemble Monte Carlo Spectral Mixture Analysis |
+| EMIT | Earth Surface Mineral Dust Source Investigation |
+| ESA | European Space Agency |
+| GSHHG | Global Self-consistent, Hierarchical, High-resolution Geography Database |
+| HDRF | Hemispherical-Directional Reflectance Factor |
+| IPCC | Intergovernmental Panel on Climate Change |
+| ISS | International Space Station |
+| L1B | Level 1B |
+| L2A | Level 2A |
+| MESMA | Multiple Endmember Spectral Mixture Analysis |
+| NA | Not Applicable |
+| NASA | National Aeronautics and Space Administration |
+| NDSI | Normalized Difference Snow Index |
+| NPV | Non-Photosynthetic Vegetation |
+| PV | Photosynthetic Vegetation |
+| QC | Quality Control |
+| RF | Radiative Forcing |
+| S | Soil |
+| SDS | Science Data System |
+| SLPIT | Spectral Line Point Intercept Transects |
+| SMA | Spectral Mixture Analysis |
+| SWIR | Shortwave-Infrared |
+| TIR | Thermal Infrared |
+| USGCRP | U.S. Global Change Research Program |
+| V2 | Version 2 |
+| VSWIR | Visible to Shortwave-Infrared |
