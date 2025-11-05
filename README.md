@@ -3,7 +3,9 @@
 *Philip Brodrick*<sup>1</sup>, *Francisco Ochoa*<sup>1,2</sup>, *Gregory S. Okin*<sup>2</sup>, *Red Willow Coleman*<sup>1,2</sup>, *K.D. Chadwick*<sup>1</sup>
 
 <sup>1</sup>Jet Propulsion Laboratory, California Institute of Technology
+
 <sup>2</sup>University of California, Los Angeles
+
 
 Corresponding author: Philip Brodrick (philip.brodrick@jpl.nasa.gov)
 
@@ -51,13 +53,13 @@ The fractional cover product described here is a three component model which is 
 ## 4 Algorithm Description
 
 ### 4.1 Scientific Theory
-The fractional cover product is derived using a spectral unmixing approach that utilizes multiple endmembers of each class (PV, NPV, and soil) in different Monte Carlo cover estimations as described by Ochoa et al. (2025) who called it EndMember Combination Monte Carlo, E(MC)<sup>2</sup>, unmixing. This approach requires a library of spectra of the component classes which is described in detail in Ochoa et al. (2025).
+The fractional cover product is derived using a spectral unmixing approach that utilizes multiple endmembers of each class (PV, NPV, and soil) in different Monte Carlo cover estimations as described by Ochoa et al. (2025), which called it EndMember Combination Monte Carlo, E(MC)<sup>2</sup>, unmixing. This approach requires a library of spectra for the component classes, as described in detail in Ochoa et al. (2025). 
 
 ### 4.2 Mathematical Theory
-To estimate fractional cover, we use a spectral unmixing approach, based on decades of literature (e.g., Roberts et al. 1998, Asner and Lobell 2000, and Dennison et al., 2019). As described in Ochoa et al. (2025), several key parameters, including the endmember selection strategy, observation normalization techniques, and the number of bootstrap samples were investigated. Simulation experiments comparing over one million synthetic spectra constructed with endmember holdout sets were utilized to select parameter values (generally following the approach of Okin et al., 2015). Selected parameter values are shown in Table 4.2-1. Parameters were chosen based on a combination of mean squared error, prediction variance, prediction bias, and computation time. All values can be tested through parameter selection in the unmix.jl script provided in the SpectralUnmixing EMIT SDS repository (https://github.com/emit-sds/SpectralUnmixing). A sample comparison between
+To estimate fractional cover, we use a spectral unmixing approach based on decades of literature (e.g., Roberts et al. 1998, Asner and Lobell 2000, and Dennison et al., 2019). As described in Ochoa et al. (2026), several key parameters, including the endmember selection strategy, observation normalization techniques, and the number of bootstrap samples were investigated. Simulation experiments comparing over one million synthetic spectra constructed with endmember holdout sets were utilized to select parameter values (generally following the approach of Okin et al., 2015). Selected parameter values are shown in Table 4.2-1. Parameters were chosen based on a combination of mean squared error, prediction variance, prediction bias, and computation time. All values can be tested through parameter selection in the unmix.jl script provided in the SpectralUnmixing EMIT SDS repository (https://github.com/emit-sds/SpectralUnmixing). A sample comparison between
 two scenarios is shown in Figure 4.2.-1.
 
-**Table 4.2-1.** _Unmixing parameter value selection in E(MC)<sup>2</sup>_
+**Table 4.2-1.** _Unmixing parameter value selection in E(MC)^2_
 | Parameter Name | Tested Values | Selected Values |
 | --- | --- | --- |
 | Endmember Selection | MESMA, Monte Carlo SMA | Monte Carlo SMA |
@@ -84,7 +86,7 @@ The required input files for fractional cover production are in Table 4.3-1.
 | Observation Geometry | solar zenith angle, view zenith angle, relative azimuth angle | degree | false |
 
 ### 4.4 Fractional Cover Algorithm Output Variables
-The EMIT output data products delivered to the DAAC use their formatting conventions, the system operates internally on data products stored as binary data cubes with detached human-readable ASCII header files. For the fraction cover product, the output variables are: 
+The EMIT output data products delivered to the DAAC use their formatting conventions; the system operates internally on data products stored as binary data cubes with detached human-readable ASCII header files. For the fraction cover product, the output variables are: 
 1. Fractional cover, provided as an n x c x 3 BIL interleave data cube, with c columns and n lines. Each channel contains the fractional cover as calculated by E(MC)<sup>2</sup> (see section 4.2.1). The band order is PV fractional cover (band 1), NPV fractional cover (band 2), and soil fractional cover (band 3).
 2. Fractional cover uncertainty, provided as an n x c x 3 BIL interleave data cube, with c columns and n lines. Each channel contains the estimated uncertainty of the fraction cover, as defined in section 6.2. The band order is PV fractional cover uncertainty (Band 1), NPV fractional cover uncertainty (band 2), and soil fractional cover uncertainty (band 3).
 
@@ -107,12 +109,12 @@ Flag all pixels identified as "cirrus" or "cloud" by the EMIT L2A Mask product (
 
 #### 4.5.2 Urban
 
-Flag all pixels with an ESA WorldCover raster value of 50 as **urban**, which corresponds to the "built-up" class. ESA WorldCover documentation defines the built-up class as: "Land covered by buildings, roads and other man-made structures such as railroads. Buildings include both residential and industrial building. Urban green (parks, sports facilities) is not included in this class. Waste dump deposits and extraction sites are considered as bare" (Zanaga et al., 2021). 
+Flag all pixels with an ESA WorldCover raster value of 50 as **urban**, which corresponds to the "built-up" class. ESA WorldCover documentation defines the built-up class as: "Land covered by buildings, roads and other man-made structures such as railroads. Buildings include both residential and industrial building. Urban green (parks, sports facilities) is not included in this class. Waste dump deposits and extraction sites are considered as bare" (Zanaga et al., 2021). The 10 m WorldCover built-up class dataset was aggregated to the 60 m EMIT resolution using gdalwarp with bilinear resampling. 
 
 
 #### 4.5.3 Water
 
-Flag all pixels identified as "water" by the EMIT L2A Mask product (Green, 2022a) and all pixels that intersect with the GSHHG global database of coastlines and rivers (Wessel and Smith, 1996) as **water**. 
+Flag all pixels identified as "water" by the EMIT L2A Mask product (Green, 2022a) and all pixels that intersect with the GSHHG global database of coastlines and rivers (Wessel and Smith, 1996) as **water**. Nearest-neighbor resampling is used to find intersecting EMIT pixels with the GSHHG vector dataset. 
 
 #### 4.5.4 Snow/Ice
 
@@ -133,13 +135,13 @@ The QA product is a single band cloud-optimized GeoTIFF (COG), where each flagge
  * 3 = Water (red)
  * 4 = Snow/Ice
 
- For pixels that contain multiple QA flags (e.g., a water pixel covered by clouds), the following hierarchy is employed with lower values taking precedence over higher values: 
+ For pixels that contain multiple QA flags (e.g., a water pixel covered by clouds), the following hierarchy is employed, with lower values taking precedence over higher values: 
  1. If the pixel contains clouds, QA = 1 
  2. If the pixel contains built-up material, QA = 2 
  3. If the pixel contains water or is a coastal pixel, QA = 3
  4. If the pixel is classified as snow/ice, QA = 4
 
-This hierarchy order minimizes incorrect classification of pixels with NDSI thresholding, which is known to over-identify liquid water as snow/ice. 
+This hierarchy order minimizes incorrect classification of pixels with NDSI thresholding, which regularly over-identifies liquid water as snow/ice across the EMIT archive. 
 
 ## 5 Algorithm Usage Constraints
 
@@ -237,6 +239,8 @@ Email: dana.chadwick@jpl.nasa.gov
 Role(s) related to this ATBD: writing - original and revision, methodology, quality assessment. 
 
 Affiliation – Jet Propulsion Laboratory, California Institute of Technology 
+-- 
+
 
 ## References
 
