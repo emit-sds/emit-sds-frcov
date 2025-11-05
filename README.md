@@ -11,7 +11,7 @@ Corresponding author: Philip Brodrick (philip.brodrick@jpl.nasa.gov)
 
 **Key Points:**
    1. Please note that this ATBD will be updated on an ongoing basis as the EMIT extended mission progresses. This is intended to be a place where the community can find the most up-to-date information on the current plans for algorithm development and offer contributions.
-   2. This is a three-component model with a series of quality assessment (QA) flags. The mission will be producing a more detailed V2 of this product which will supersede this version during FY26. 
+   2. This is a three-component model with a series of quality control (QC) flags. The mission will be producing a more detailed V2 of this product which will supersede this version during FY26. 
    3. If you identify issues with this product not current outlined in the Known Issues section, please contribute that information here to help the community.
 
 **Version:** 1.0
@@ -24,14 +24,8 @@ Corresponding author: Philip Brodrick (philip.brodrick@jpl.nasa.gov)
 
 ## Plain Language Summary
 
-The terrestrial surface of the Earth is comprised of many substances. Using imaging spectroscopy, we work to classify
-these substances into groups in order to help with the interpretation of various algorithms. In this Version 1 of the
-EMIT Fractional Cover Product, we are focused on being able to determine the fractions comprised of bare rock/soil
-(areas where mineral determination algorithms are appropriate for interpretation), photosynthetic vegetation (largely 
-identified by their characteristic red edge, chlorophyll absorptions, and low reflectance in the SWIR, appropriate for 
-interpretation of trait estimation algorithms), and non-photosynthetic vegetation (which can include dead vegetation, 
-leaf litter, wood, some lichens and biocrusts). All other surface types, as well as areas that are obscured by clouds, 
-we seek to flag using the QA bands associated with this product.
+The terrestrial surface of the Earth is comprised of many substances. Using imaging spectroscopy, we work to classify these substances into groups in order to help with the interpretation of various algorithms. In this Version 1 of the EMIT Fractional Cover Product, we are focused on being able to determine the fractions comprised of bare rock/soil (areas where mineral determination algorithms are appropriate for interpretation), photosynthetic vegetation (largely 
+identified by their characteristic red edge, chlorophyll absorptions, and low reflectance in the SWIR, appropriate for interpretation of trait estimation algorithms), and non-photosynthetic vegetation (which can include dead vegetation, leaf litter, wood, some lichens and biocrusts). All other surface types, as well as areas that are obscured by clouds, we seek to flag using the QC bands associated with this product.
 
 We are providing this Algorithm Theoretical Basis Document in a github markdown format in order to provide a record of ongoing updates as algorithms improved via the commit record, as well as allowing the community to engage more directly in the process of documentation in keeping with NASA's commitment to open science. 
 
@@ -39,7 +33,7 @@ We are providing this Algorithm Theoretical Basis Document in a github markdown 
 
 ## 1 Version Description
 
-This is Version 1.0 of the EMIT fractional cover and fractional cover quality assessment (QA) product.
+This is Version 1.0 of the EMIT fractional cover and fractional cover quality control (QC) product.
 
 ## 2 Introduction
 Mineral dust aerosols originate as soil particles lifted into the atmosphere by wind erosion. Mineral dust created by
@@ -73,18 +67,13 @@ globe as the purview of the mission expands in its extended mission activities. 
 developed as part of the prime mission activities but was not formally delivered to the DAAC. The product is being 
 refined and formally delivered to the DAAC as part of the EMIT extended mission activities.
 ### 3.2 Additional Information
-The fractional cover product described here is a three component model which is masked by a series of quality assessment (QA) flags. 
-The three components are photosynthetic vegetation (PV), non-photosynthetic vegetation (NPV), and bare soil (S). The QA flags include cloud, urban, water, and snow/ice. The fractional cover product is derived using a Monte Carlo Spectral Unmixing approach, which is described in detail in Section 4. The QA flags are derived using a combination of the EMIT L2A surface reflectance product (Green, 2022b), the ESA WorldCover land cover product (Zanaga et al., 2021), and the GSHHG global database of coastlines and rivers (Wessel and Smith, 1996). The QA flags are described in detail in Section 4.5.
+The fractional cover product described here is a three component model which is masked by a series of quality control (QC) flags. 
+The three components are photosynthetic vegetation (PV), non-photosynthetic vegetation (NPV), and bare soil (S). The QC flags include cloud, urban, water, and snow/ice. The fractional cover product is derived using a Monte Carlo Spectral Unmixing approach, which is described in detail in Section 4. The QC flags are derived using a combination of the EMIT L2A surface reflectance product (Green, 2022b), the ESA WorldCover land cover product (Zanaga et al., 2021), and the GSHHG global database of coastlines and rivers (Wessel and Smith, 1996). The QC flags are described in detail in Section 4.5.
 ## 4 Algorithm Description
 
 ### 4.1 Scientific Theory
-The fractional cover product is derived using a Monte Carlo Spectral Unmixing approach. This approach uses a spectral 
-library of endmembers to estimate the fractional cover of each component within each pixel. The spectral library used 
-for the EMIT fractional cover product is derived from field and laboratory measurements of soils and vegetation. The 
-spectral library includes endmembers for photosynthetic vegetation, non-photosynthetic vegetation, and bare soil. 
-Here, we used the global endmember set (Ochoa et al. 2024; DOI: [10.21232/QijXnpFt](https://ecosis.org/package/drylands-spectral-libraries-in-support-of-emit)) curated for EMIT to forge our 
-spectral unmixing library. From the global endmember set, we used a random selection of NPV and GV, whereas for soil, 
-we used a 4-dimensional Convex Hull endmember reduction approach (procedures outlined in Ochoa et al. 2025; 
+The fractional cover product is derived using a Monte Carlo Spectral Unmixing approach. This approach uses a spectral library of endmembers to estimate the fractional cover of each component within each pixel. The spectral library used for the EMIT fractional cover product is derived from field and laboratory measurements of soils and vegetation. The spectral library includes endmembers for photosynthetic vegetation, non-photosynthetic vegetation, and bare soil. 
+Here, we used the global endmember set (Ochoa et al. 2024; DOI: [10.21232/QijXnpFt](https://ecosis.org/package/drylands-spectral-libraries-in-support-of-emit)) curated for EMIT to forge our spectral unmixing library. From the global endmember set, we used a random selection of NPV and GV, whereas for soil, we used a 4-dimensional Convex Hull endmember reduction approach (procedures outlined in Ochoa et al. 2025; 
 Code to build spectral unmixing library: [Terraspec](https://github.com/fotxoa-geo/terraspec/tree/production)).
 
 ![](figs/em_reduction_visualization.png "Soil endmember reduction techniques.")
@@ -131,8 +120,8 @@ The EMIT output data products delivered to the DAAC use their formatting convent
 
 These products are consistent with the auxiliary data products described in the EMIT L3ASA ATBD, section 4.4.2 (Brodrick et al., 2023).
 
-### 4.5 Fractional Cover QA Product Input Variables
-The required input files for fractional cover QA production are in Table 4.5-1.
+### 4.5 Fractional Cover QC Product Input Variables
+The required input files for fractional cover QC production are in Table 4.5-1.
 
 **Table 4.5-1.** _QA input variables_
 
@@ -166,26 +155,26 @@ $$
 
 Where 560 nm is the "Green" wavelength band and 1600 nm is the "SWIR (shortwave-infrared)" wavelength band. Following recommendations in the literature that suggest a global NDSI threshold of 0.4 (Hall et al., 2015), flag all pixels with an NDSI value greater than 0.4 as **snow/ice**.
 
-### 4.6 Fractional Cover QA Product Output Variables
+### 4.6 Fractional Cover QC Product Output Variables
 The EMIT output data products delivered to the DAAC use their formatting conventions, the system operates internally on data products stored as binary data cubes with detached human-readable ASCII header files.
 
-The QA product is a single band cloud-optimized GeoTIFF (COG), where each flagged QA pixel is assigned one of the following values with colors associated with figures below in parentheses for reference:  
+The QC product is a single band cloud-optimized GeoTIFF (COG), where each flagged QC pixel is assigned one of the following values with colors associated with figures below in parentheses for reference:  
  * 1 = Cloud (orange)
  * 2 = Urban (green)
  * 3 = Water (red)
  * 4 = Snow/Ice
 
- For pixels that contain multiple QA flags (e.g., a water pixel covered by clouds), the following hierarchy is employed, with lower values taking precedence over higher values: 
- 1. If the pixel contains clouds, QA = 1 
- 2. If the pixel contains built-up material, QA = 2 
- 3. If the pixel contains water or is a coastal pixel, QA = 3
- 4. If the pixel is classified as snow/ice, QA = 4
+ For pixels that contain multiple QC flags (e.g., a water pixel covered by clouds), the following hierarchy is employed, with lower values taking precedence over higher values: 
+ 1. If the pixel contains clouds, QC = 1 
+ 2. If the pixel contains built-up material, QC = 2 
+ 3. If the pixel contains water or is a coastal pixel, QC = 3
+ 4. If the pixel is classified as snow/ice, QC = 4
 
 This hierarchy order minimizes incorrect classification of pixels with NDSI thresholding, which regularly over-identifies liquid water as snow/ice across the EMIT archive. 
 
 ## 5 Algorithm Usage Constraints
 
-Note that the QA flags are not mutually exclusive and also the QA flags are not intended as a comprehensive cloud, urban, water, or snow/ice identification product. Rather, it is intended to flag pixels that are likely to be misclassified by the fractional cover algorithm and it is not recommended to use the QA product as a standalone cloud, urban, water, or snow/ice product.
+Note that the QC flags are not mutually exclusive and also the QC flags are not intended as a comprehensive cloud, urban, water, or snow/ice identification product. Rather, it is intended to flag pixels that are likely to be misclassified by the fractional cover algorithm and it is not recommended to use the QC product as a standalone cloud, urban, water, or snow/ice product.
 
 ## 6 Performance Assessment
 
@@ -196,19 +185,17 @@ involves taking spectra along continuous intervals in the field, unmixing them, 
 imagery. Overall, SLPIT estimates of fractional cover align well with EMIT observations. For a more detailed description of the field protocol, sites, and results see: 
 <i>Ochoa et al. in prep</i>.
 
-<i>[validation methodologies should reference Francisco's work here, but I don't have detailed descriptions - would recommend showing validation plots from Ochoa paper?] </i>
-
 ### 6.2 Uncertainties
 
 To estimate the uncertainty of the Monte Carlo SMA results, we utilize the variation in the bootstrapped retrievals. During each simulation, the endmember selection is seeded differently (representing model error) and the reflectance is perturbed by a (per-wavelength) random deviation proportionate to the channelized reflectance uncertainty provided by L2A. The standard deviation of the soil fractional cover from the different simulations (𝜎 <_>𝑠 𝑗) is then used as the uncertainty, as in Ochoa et al. (2025).
 
-We neglect the uncertainty associated with QA assessment for the purposes of providing a mask for this product.
+We neglect the uncertainty associated with QC assessment for the purposes of providing a mask for this product.
 
 ### 6.3 Known Issues
-The spectral library used for unmixing may not be representative of all surface types globally, leading to potential inaccuracies in fractional cover estimates in some regions. Here we describe known issues with both the fractional cover and fractional cover QA products for users to be aware of. Many of these issues are being addressed in ongoing work to improve the products and will be resolved in a planned v2 release.
+The spectral library used for unmixing may not be representative of all surface types globally, leading to potential inaccuracies in fractional cover estimates in some regions. Here we describe known issues with both the fractional cover and fractional cover QC products for users to be aware of. Many of these issues are being addressed in ongoing work to improve the products and will be resolved in a planned v2 release.
 
 #### 6.3.1 Fractional Cover 
-The following issues have been identified with the fractional cover product in areas that are not flagged by the current QA product. This section will be updated as issues with the QA product are addressed or the fractional cover product is improved.
+The following issues have been identified with the fractional cover product in areas that are not flagged by the current QC product. This section will be updated as issues with the QC product are addressed or the fractional cover product is improved.
 * At cloud edges and in cloud shadows regions are often inaccurately estimated as high NPV (Figures 1 & 2). Users may opt to use the cloud buffer mask provided in the EMIT L2A Mask product (Green, 2022a) to remove these pixels from analysis.
 
 ![Example of NPV misclassification](figs/NPV_KnownIssue1.png "Example of NPV misclassification")
@@ -220,13 +207,13 @@ The following issues have been identified with the fractional cover product in a
 *Figure 2: Example of NPV misclassification along cloud edges on the north side of clouds present in the image.*
 
 
-#### 6.3.2 Fractional Cover QA 
-* The GSHHG dataset does not include major inland lakes, including the Great Lakes, which should be classified as QA water pixels
-* EMIT L2A mask product may fail to identify liquid water for acquisitions with substantial sun glint, leading to misclassified water pixels in the QA product
-* NDSI threshold value of 0.4 may over-identify liquid water pixels as snow/ice pixels in the QA product
-* Shaded snow/ice pixels may be identified as water in the QA product.
-* Bright snow/ice pixels may be misidentified as clouds in the QA product.
-* Some clouds over water may result in no QA flag being assigned to the pixel.
+#### 6.3.2 Fractional Cover QC
+* The GSHHG dataset does not include major inland lakes, including the Great Lakes, which should be classified as QC water pixels
+* EMIT L2A mask product may fail to identify liquid water for acquisitions with substantial sun glint, leading to misclassified water pixels in the QC product
+* NDSI threshold value of 0.4 may over-identify liquid water pixels as snow/ice pixels in the QC product
+* Shaded snow/ice pixels may be identified as water in the QC product.
+* Bright snow/ice pixels may be misidentified as clouds in the QC product.
+* Some clouds over water may result in no QC flag being assigned to the pixel.
 
 ## 7 Algorithm Implementation
 
@@ -322,3 +309,39 @@ Hyperspectral Imager Spectra.</i> Remote Sensing, 11(18), p.2072.
 
 * Zanaga, D., Van De Kerchove, R., De Keersmaecker, W., Souverijns, N., Brockmann, C., Quast, R., Wevers, J., Grosu, A., Paccini, A., Vergnaud, S., Cartus, O., Santoro, M., Fritz, S., Georgieva, I., Lesiv, M., Carter, S., Herold, M., Li, Linlin, Tsendbazar, N.E., Ramoino, F., Arino, O., 2021. <i>ESA WorldCover 10 m 2020 v100</i>. https://doi.org/10.5281/zenodo.5571936
 
+
+## Acronyms
+
+| Acronym | Definition |
+| --- | --- |
+| ATBD | Algorithm Theoretical Basis Document |
+| ASCII | American Standard Code for Information Interchange |
+| BIL | Band Interleaved by Line |
+| COG | Cloud-Optimized GeoTIFF |
+| DAAC | Distributed Active Archive Center |
+| E(MC)<sup>2</sup> | Ensemble Monte Carlo Spectral Mixture Analysis |
+| EMIT | Earth Surface Mineral Dust Source Investigation |
+| ESA | European Space Agency |
+| GSHHG | Global Self-consistent, Hierarchical, High-resolution Geography Database |
+| HDRF | Hemispherical-Directional Reflectance Factor |
+| IPCC | Intergovernmental Panel on Climate Change |
+| ISS | International Space Station |
+| L1B | Level 1B |
+| L2A | Level 2A |
+| MESMA | Multiple Endmember Spectral Mixture Analysis |
+| NA | Not Applicable |
+| NASA | National Aeronautics and Space Administration |
+| NDSI | Normalized Difference Snow Index |
+| NPV | Non-Photosynthetic Vegetation |
+| PV | Photosynthetic Vegetation |
+| QC | Quality Control |
+| RF | Radiative Forcing |
+| S | Soil |
+| SDS | Science Data System |
+| SLPIT | Spectral Line Point Intercept Transects |
+| SMA | Spectral Mixture Analysis |
+| SWIR | Shortwave-Infrared |
+| TIR | Thermal Infrared |
+| USGCRP | U.S. Global Change Research Program |
+| V2 | Version 2 |
+| VSWIR | Visible to Shortwave-Infrared |
