@@ -24,9 +24,16 @@ Corresponding author: Philip Brodrick (philip.brodrick@jpl.nasa.gov)
 
 ## Plain Language Summary
 
-The terrestrial surface of the Earth is comprised of many substances. Using imaging spectroscopy, we work to classify these substances into groups in order to help with the interpretation of various algorithms. In this Version 1 of the EMIT Fractional Cover Product, we are focused on being able to determine the fractions comprised of bare rock/soil (areas where mineral determination algorithms are appropriate for interpretation), photosynthetic vegetation (largely identified by their characteristic red edge and low reflectance in the SWIR, appropriate for interpretation of trait estimation algorithms), and non-photosynthetic vegetation (which can include leaf litter, wood, some lichens and biocrusts). All other surface types, as well as areas that are obscured by clouds, we seek to flag using the QA bands associated with this product.
+The terrestrial surface of the Earth is comprised of many substances. Using imaging spectroscopy, we work to classify
+these substances into groups in order to help with the interpretation of various algorithms. In this Version 1 of the
+EMIT Fractional Cover Product, we are focused on being able to determine the fractions comprised of bare rock/soil
+(areas where mineral determination algorithms are appropriate for interpretation), photosynthetic vegetation (largely 
+identified by their characteristic red edge, chlorophyll absorptions, and low reflectance in the SWIR, appropriate for 
+interpretation of trait estimation algorithms), and non-photosynthetic vegetation (which can include dead vegetation, 
+leaf litter, wood, some lichens and biocrusts). All other surface types, as well as areas that are obscured by clouds, 
+we seek to flag using the QA bands associated with this product.
 
-We are providing this Algorithm Theoretical Basis Document in a github markdown format in order to provide a record of ongoing updates as algorithms improve via the commit record, as well as allowing the community to engage more directly in the process of documentation in keeping with NASA's commitment to open science. 
+We are providing this Algorithm Theoretical Basis Document in a github markdown format in order to provide a record of ongoing updates as algorithms improved via the commit record, as well as allowing the community to engage more directly in the process of documentation in keeping with NASA's commitment to open science. 
 
 ### Keywords: hyperspectral imaging, imaging spectroscopy, fractional cover, terrestrial
 
@@ -35,41 +42,72 @@ We are providing this Algorithm Theoretical Basis Document in a github markdown 
 This is Version 1.0 of the EMIT fractional cover and fractional cover quality assessment (QA) product.
 
 ## 2 Introduction
-Mineral dust aerosols originate as soil particles lifted into the atmosphere by wind erosion. Mineral dust created by human activity makes a large contribution to the uncertainty of direct radiative forcing (RF) by anthropogenic aerosols (USGCRP and IPCC). Mineral dust is a prominent aerosol constituent around the globe. However, we have a poor understanding of its direct radiative effect, partly due to uncertainties in the dust mineral composition. Dust radiative forcing is highly dependent on its mineral-specific absorption properties. The current range of iron oxide abundance in dust source models translates into a large range of values, even changing the sign of the forcing (-0.15 to 0.21 W/m2) predicted by Earth System Models (ESMs) (Li et al., 2020). The National Aeronautics and Space Administration (NASA) selected the Earth Surface Mineral Dust Source Investigation (EMIT) to close this knowledge gap. EMIT is an instrument on the International Space Station (ISS) that can directly measure and map the soil mineral composition of critical dust-forming regions worldwide.
+Mineral dust aerosols originate as soil particles lifted into the atmosphere by wind erosion. Mineral dust created by
+human activity makes a large contribution to the uncertainty of direct radiative forcing (RF) by anthropogenic aerosols 
+(USGCRP and IPCC) and is a prominent aerosol constituent around the globe. However, we have poor understanding 
+of its direct radiative effect, partly due to uncertainties in the dust mineral composition. Dust radiative forcing is 
+highly dependent on its mineral-specific absorption properties. The current range of iron oxide abundance in dust source 
+models translates into a large range of values, even changing the sign of the forcing (-0.15 to 0.21 W/m2) predicted by 
+Earth System Models (ESMs) (Li et al., 2020). The National Aeronautics and Space Administration (NASA) selected the 
+Earth Surface Mineral Dust Source Investigation (EMIT) to close this knowledge gap. NASA launched an instrument to the 
+International Space Station (ISS) to directly measure and map the soil mineral composition of critical dust-forming 
+regions worldwide.
 
 ## 3 Context/Background
-As part of the EMIT mission, a three-class fractional cover product is being developed to provide estimates of the fractional cover of photosynthetic vegetation (PV or GV), non-photosynthetic vegetation (NPV), and bare soil (S) within each 60m EMIT pixel. This product will be used to help interpret the surface mineralogy results from the EMIT mission, as well as provide a valuable dataset for the broader science community.
+As part of the EMIT mission, a three-class fractional cover product is being developed to provide estimates of the 
+fractional cover of photosynthetic vegetation (PV or GV), non-photosynthetic vegetation (NPV), and bare soil (S) within 
+each 60 m EMIT pixel. This product will be used to help interpret the surface mineralogy results from the EMIT mission, 
+as well as provide a valuable dataset for the broader science community.
 
-Example spectra from the three classes are shown in Figure 3 from Ochoa et al, 2025. 
+Example spectra from the three classes are shown in Figure 3 from Ochoa et al., 2025. 
 
 ![Example spectra from the three classes](figs/Ochoa_spec.jpg "Example spectra from the three classes")
 
 *Figure 3-1. A random selection of spectra from the endmember library used for unmixing. Figure from Ochoa et al., 2025.* 
 
 ### 3.1 Historical Perspective
-Fractional cover products have been used for a variety of applications, including land cover classification, vegetation monitoring, and soil moisture estimation. The EMIT fractional cover product builds on this previous work by using the unique capabilities of the EMIT instrument to provide high-resolution estimates of fractional cover across the globe as the purview of the mission expands in its extended mission activities. The EMIT fractional cover product was developed as part of the prime mission activities but was not formally delivered to the DAAC. The product is being refined and formally delivered to the DAAC as part of the EMIT extended mission activities.
+Fractional cover products have been used for a variety of applications, including land cover classification, 
+vegetation monitoring, and soil moisture estimation. The EMIT fractional cover product builds on this previous work by 
+using the unique capabilities of the EMIT instrument to provide high-resolution estimates of fractional cover across the 
+globe as the purview of the mission expands in its extended mission activities. The EMIT fractional cover product was 
+developed as part of the prime mission activities but was not formally delivered to the DAAC. The product is being 
+refined and formally delivered to the DAAC as part of the EMIT extended mission activities.
 ### 3.2 Additional Information
-The fractional cover product described here is a three component model which is masked by a series of quality assessment (QA) flags. The three components are photosynthetic vegetation (PV), non-photosynthetic vegetation (NPV), and bare soil (S). The QA flags include cloud, urban, water, and snow/ice. The fractional cover product is derived using a Monte Carlo Spectral Unmixing approach, which is described in detail in Section 4. The QA flags are derived using a combination of the EMIT L2A surface reflectance product (Green, 2022b), the ESA WorldCover land cover product (Zanaga et al., 2021), and the GSHHG global database of coastlines and rivers (Wessel and Smith, 1996). The QA flags are described in detail in Section 4.5.
+The fractional cover product described here is a three component model which is masked by a series of quality assessment (QA) flags. 
+The three components are photosynthetic vegetation (PV), non-photosynthetic vegetation (NPV), and bare soil (S). The QA flags include cloud, urban, water, and snow/ice. The fractional cover product is derived using a Monte Carlo Spectral Unmixing approach, which is described in detail in Section 4. The QA flags are derived using a combination of the EMIT L2A surface reflectance product (Green, 2022b), the ESA WorldCover land cover product (Zanaga et al., 2021), and the GSHHG global database of coastlines and rivers (Wessel and Smith, 1996). The QA flags are described in detail in Section 4.5.
 ## 4 Algorithm Description
 
 ### 4.1 Scientific Theory
-The fractional cover product is derived using a spectral unmixing approach that utilizes multiple endmembers of each class (PV, NPV, and soil) in different Monte Carlo cover estimations as described by Ochoa et al. (2025), which called it EndMember Combination Monte Carlo, E(MC)<sup>2</sup>, unmixing. This approach requires a library of spectra for the component classes, as described in detail in Ochoa et al. (2025). 
+The fractional cover product is derived using a Monte Carlo Spectral Unmixing approach. This approach uses a spectral 
+library of endmembers to estimate the fractional cover of each component within each pixel. The spectral library used 
+for the EMIT fractional cover product is derived from field and laboratory measurements of soils and vegetation. The 
+spectral library includes endmembers for photosynthetic vegetation, non-photosynthetic vegetation, and bare soil. 
+Here, we used the global endmember set (Ochoa et al. 2024; DOI: [10.21232/QijXnpFt](https://ecosis.org/package/drylands-spectral-libraries-in-support-of-emit)) curated for EMIT to forge our 
+spectral unmixing library. From the global endmember set, we used a random selection of NPV and GV, whereas for soil, 
+we used a 4-dimensional Convex Hull endmember reduction approach (procedures outlined in Ochoa et al. 2025; 
+Code to build spectral unmixing library: [Terraspec](https://github.com/fotxoa-geo/terraspec/tree/production)).
+
+![](figs/em_reduction_visualization.png "Soil endmember reduction techniques.")
+
+*Figure 4-1. A 2-dimensional Latin Hypercube and Convex hull endmember reduction approach being implemented on soil endmembers. Figure from Ochoa et al., 2025.* 
 
 ### 4.2 Mathematical Theory
-To estimate fractional cover, we use a spectral unmixing approach based on decades of literature (e.g., Roberts et al. 1998, Asner and Lobell 2000, and Dennison et al., 2019). As described in Ochoa et al. (2026), several key parameters, including the endmember selection strategy, observation normalization techniques, and the number of bootstrap samples were investigated. Simulation experiments comparing over one million synthetic spectra constructed with endmember holdout sets were utilized to select parameter values (generally following the approach of Okin et al., 2015). Selected parameter values are shown in Table 4.2-1. Parameters were chosen based on a combination of mean squared error, prediction variance, prediction bias, and computation time. All values can be tested through parameter selection in the unmix.jl script provided in the SpectralUnmixing EMIT SDS repository (https://github.com/emit-sds/SpectralUnmixing). A sample comparison between
-two scenarios is shown in Figure 4.2.-1.
+To estimate fractional cover, we use a Monte Carlo Spectral Unmixing strategy, based on decades of literature (e.g., Roberts et al. 1998, Asner and Lobell 2000, and Dennison et al., 2019). 
+Several key parameters, including the endmember selection strategy, observation normalization techniques, and the number of bootstrap samples were investigated. 
+Simulation experiments comparing over one million synthetic spectra constructed with endmember holdout sets were utilized to select parameter values (generally following the approach of Okin et al., 2001, 2015).
+Selected parameter values are shown in Table 4.2.1-1. Parameters were chosen based on a combination of mean absolute error, prediction variance, prediction bias, and computation time. 
+All values can be tested through parameter selection in the unmix.jl script provided in the SpectralUnmixing EMIT SDS repository (https://github.com/emit-sds/SpectralUnmixing). A sample comparison between two scenarios is shown in Figure 4.2.-1.
 
-**Table 4.2-1.** _Unmixing parameter value selection in E(MC)^2_
+**Table 4.2-1.** _Unmixing parameter value selection_
+
 | Parameter Name | Tested Values | Selected Values |
 | --- | --- | --- |
-| Endmember Selection | MESMA, Monte Carlo SMA | Monte Carlo SMA |
+| Endmember Selection | MESMA, SMA | SMA |
 | Endmember Selection Strategy | Class-even, Random | Class-even |
 | Normalization | None, Brightness, 1070, 1500, 1756, 2030 | Brightness |
 | Maximum Number of Combinations (MESMA only) | 10, 100, 500, 1000 | NA |
 | Number of Endmembers per Class per Bootstrap Draw (SMA only) | 5, 10, 30, 50 | 30 |
 | Number of Bootstrap Draws | 1, 5, 10, 20, 50, 100, 200 | 20 |
-
-
 
 ![Alt text for the figure](figs/Comparisons.png "Comparisons")
 *Figure 4.2-1: Comparison between two parameter combinations. On top is the E(MC)<sup>2</sup> unmixing analysis with 10 endmembers per class per bootstrap draw, brightness normalization, class-even endmember selection, and 50 bootstrap draws. On the bottom is a MESMA-style unmixing analysis with a maximum of 1000 class-even selected endmembers, brightness normalization, and 50 bootstrap draws.*
@@ -79,6 +117,7 @@ two scenarios is shown in Figure 4.2.-1.
 The required input files for fractional cover production are in Table 4.3-1.
 
 **Table 4.3-1.** _Input variables_
+
 | Name | Description | Unit | Required |
 | --- | --- | --- | --- |
 | HDRF (Surface Reflectance) | hemispherical-directional reflectance factor per wavelength | unitless | true |
@@ -96,6 +135,7 @@ These products are consistent with the auxiliary data products described in the 
 The required input files for fractional cover QA production are in Table 4.5-1.
 
 **Table 4.5-1.** _QA input variables_
+
 | Name | Description | Spatial Resolution | Required | Type |
 | --- | --- | --- | --- | --- |
 | EMIT L2A Surface Reflectance | hemispherical-directional reflectance factor (HDRF) per wavelength | 60 m | true | raster
@@ -151,11 +191,16 @@ Note that the QA flags are not mutually exclusive and also the QA flags are not 
 
 ### 6.1 Validation Methods
 
+We base our field validation on Spectral Line Point Intercept Transects (SLPIT) developed by Meyer & Okin 2015. SLPIT 
+involves taking spectra along continuous intervals in the field, unmixing them, and comparing them to spaceborne/airborne
+imagery. Overall, SLPIT estimates of fractional cover align well with EMIT observations. For a more detailed description of the field protocol, sites, and results see: 
+<i>Ochoa et al. in prep</i>.
+
 <i>[validation methodologies should reference Francisco's work here, but I don't have detailed descriptions - would recommend showing validation plots from Ochoa paper?] </i>
 
 ### 6.2 Uncertainties
 
-To estimate the uncertainty of the Monte Carlo SMA results, we run 50 Monte Carlo simulations. During each simulation, the endmember selection is seeded differently (representing model error) and the reflectance is perturbed by a (per-wavelength) random deviation proportionate to the channelized reflectance uncertainty provided by L2A. The standard deviation of the soil fractional cover from the different simulations (𝜎 <_>𝑠 𝑗) is then used as the uncertainty, as in Ochoa et al. (2025).
+To estimate the uncertainty of the Monte Carlo SMA results, we utilize the variation in the bootstrapped retrievals. During each simulation, the endmember selection is seeded differently (representing model error) and the reflectance is perturbed by a (per-wavelength) random deviation proportionate to the channelized reflectance uncertainty provided by L2A. The standard deviation of the soil fractional cover from the different simulations (𝜎 <_>𝑠 𝑗) is then used as the uncertainty, as in Ochoa et al. (2025).
 
 We neglect the uncertainty associated with QA assessment for the purposes of providing a mask for this product.
 
@@ -227,6 +272,18 @@ Email: willow.coleman@jpl.nasa.gov
 Role(s) related to this ATBD: writing - original and revision, methodology, software. 
 
 Affiliation – Jet Propulsion Laboratory, California Institute of Technology 
+
+--
+
+Francisco Ochoa
+
+ORCID: 0000-0003-3363-2496
+
+Email: francisco.ochoa@jpl.nasa.gov; fochoa1@g.ucla.edu 
+
+Role(s) related to this ATBD: editing, methodology. 
+
+Affiliation – Jet Propulsion Laboratory, California Institute of Technology; University of California Los Angeles
 
 --
 
