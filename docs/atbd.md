@@ -115,8 +115,8 @@ The required input files for fractional cover production are in Table 4.3-1.
 
 ### 4.4 Fractional Cover Algorithm Output Variables
 The EMIT output data products delivered to the DAAC use their formatting conventions; the system operates internally on data products stored as binary data cubes with detached human-readable ASCII header files. For the fraction cover product, the output variables are: 
-1. Fractional cover, provided as an n x c x 3 BIL interleave data cube, with c columns and n lines. Each channel contains the fractional cover as calculated by E(MC)<sup>2</sup> (see section 4.2.1). The band order is PV fractional cover (band 1), NPV fractional cover (band 2), and soil fractional cover (band 3).
-2. Fractional cover uncertainty, provided as an n x c x 3 BIL interleave data cube, with c columns and n lines. Each channel contains the estimated uncertainty of the fraction cover, as defined in section 6.2. The band order is PV fractional cover uncertainty (Band 1), NPV fractional cover uncertainty (band 2), and soil fractional cover uncertainty (band 3).
+1. Fractional cover, provided as an n x c x 3 BIL interleave data cube, with c columns and n lines. Each channel contains the fractional cover as calculated by E(MC)<sup>2</sup> (see section 4.2.1). The band order is NPV fractional cover (band 1), PV fractional cover (band 2), and soil fractional cover (band 3).
+2. Fractional cover uncertainty, provided as an n x c x 3 BIL interleave data cube, with c columns and n lines. Each channel contains the estimated uncertainty of the fraction cover, as defined in section 6.2. The band order is NPV fractional cover uncertainty (Band 1), PV fractional cover uncertainty (band 2), and soil fractional cover uncertainty (band 3).
 
 These products are consistent with the auxiliary data products described in the EMIT L3ASA ATBD, section 4.4.2 (Brodrick et al., 2023).
 
