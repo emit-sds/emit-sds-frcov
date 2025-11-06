@@ -109,9 +109,9 @@ The required input files for fractional cover production are in Table 4.3-1.
 
 | Name | Description | Unit | Required |
 | --- | --- | --- | --- |
-| HDRF (Surface Reflectance) | hemispherical-directional reflectance factor per wavelength | unitless | true |
+| EMIT L2A Surface Reflectance | hemispherical-directional reflectance factor per wavelength | unitless | true |
+| EMIT L2A Surface Reflectance Uncertainty | hemispherical-directional reflectance uncertainty per wavelength | unitless | true |
 | Endmember Spectral Library | collection of spectral surface endmembers (HDRF per wavelength) | unitless | true |
-| Observation Geometry | solar zenith angle, view zenith angle, relative azimuth angle | degree | false |
 
 ### 4.4 Fractional Cover Algorithm Output Variables
 The EMIT output data products delivered to the DAAC use their formatting conventions; the system operates internally on data products stored as binary data cubes with detached human-readable ASCII header files. For the fraction cover product, the output variables are: 
