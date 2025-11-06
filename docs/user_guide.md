@@ -36,7 +36,7 @@ Table 1 1: EMITL2BFRCOV collection file list and naming convention
 | EMIT_L2B_FRCOVPVUNC_&lt;VVV&gt;_&lt;YYYYMMDDTHHMMSS&gt;_&lt;OOOOO&gt;_&lt;SSS&gt;.tif  | Fractional Cover Uncertainty, Photosynthetic Vegetation (aerial fraction) |
 | EMIT_L2B_FRCOVNPVUNC_&lt;VVV&gt;_&lt;YYYYMMDDTHHMMSS&gt;_&lt;OOOOO&gt;_&lt;SSS&gt;.tif  | Fractional Cover Uncertainty, Non-Photosynthetic Vegetation (aerial fraction) |  
 | EMIT_L2B_FRCOVBAREUNC_&lt;VVV&gt;_&lt;YYYYMMDDTHHMMSS&gt;_&lt;OOOOO&gt;_&lt;SSS&gt;.tif  | Fractional Cover Uncertainty, Bare Soil (aerial fraction) |
-| EMIT_L2B_FRCOVQC_&lt;VVV&gt;_&lt;YYYYMMDDTHHMMSS&gt;_&lt;OOOOO&gt;_&lt;SSS&gt;.nc  | QC Flag Bands (integer)|
+| EMIT_L2B_FRCOVQC_&lt;VVV&gt;_&lt;YYYYMMDDTHHMMSS&gt;_&lt;OOOOO&gt;_&lt;SSS&gt;.tif  | QC Flag Bands (integer)|
 | EMIT_L2B_FRCOV_&lt;VVV&gt;_&lt;YYYYMMDDTHHMMSS&gt;_&lt;OOOOO&gt;_&lt;SSS&gt;.png  | Browse |
 
 
