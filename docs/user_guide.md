@@ -50,7 +50,7 @@ Table 1 1: EMITL2BFRCOV collection file list and naming convention
 &lt;SSS&gt; is the scene identification number, e.g., 007
 
 ##### 1.3.2    L2BFRCOV Data Products
-The EMIT L2B Fractional Cover collection contains estimated surface fractional cover and quality assurance bands as Cloud Optimized GeoTIFF (COG) files. Each COG file contains multiple bands and the data are organized in a way that allows for efficient access and retrieval of specific bands or subsets of the data.
+The EMIT L2B Fractional Cover collection contains estimated surface fractional cover and quality assurance bands as Cloud Optimized GeoTIFF (COG) files, which are organized to allow efficient access and retrieval of data subsets.
 
 #### 1.4 Product Availability
 The EMIT L2BFRCOV products will be available at the NASA Land Processes Distributed Active Archive Center (LP DAAC, https://lpdaac.usgs.gov/) and through NASA Earthdata (https://earthdata.nasa.gov/).
