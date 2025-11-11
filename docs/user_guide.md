@@ -36,7 +36,7 @@ Table 1 1: EMITL2BFRCOV collection file list and naming convention
 | EMIT_L2B_FRCOVPVUNC_&lt;VVV&gt;_&lt;YYYYMMDDTHHMMSS&gt;_&lt;OOOOO&gt;_&lt;SSS&gt;.tif  | Fractional Cover Uncertainty, Photosynthetic Vegetation (aerial fraction) |
 | EMIT_L2B_FRCOVNPVUNC_&lt;VVV&gt;_&lt;YYYYMMDDTHHMMSS&gt;_&lt;OOOOO&gt;_&lt;SSS&gt;.tif  | Fractional Cover Uncertainty, Non-Photosynthetic Vegetation (aerial fraction) |  
 | EMIT_L2B_FRCOVBAREUNC_&lt;VVV&gt;_&lt;YYYYMMDDTHHMMSS&gt;_&lt;OOOOO&gt;_&lt;SSS&gt;.tif  | Fractional Cover Uncertainty, Bare Soil (aerial fraction) |
-| EMIT_L2B_FRCOVQC_&lt;VVV&gt;_&lt;YYYYMMDDTHHMMSS&gt;_&lt;OOOOO&gt;_&lt;SSS&gt;.nc  | QC Flag Bands (integer)|
+| EMIT_L2B_FRCOVQC_&lt;VVV&gt;_&lt;YYYYMMDDTHHMMSS&gt;_&lt;OOOOO&gt;_&lt;SSS&gt;.tif  | QC Flag Bands (integer)|
 | EMIT_L2B_FRCOV_&lt;VVV&gt;_&lt;YYYYMMDDTHHMMSS&gt;_&lt;OOOOO&gt;_&lt;SSS&gt;.png  | Browse |
 
 
@@ -50,7 +50,7 @@ Table 1 1: EMITL2BFRCOV collection file list and naming convention
 &lt;SSS&gt; is the scene identification number, e.g., 007
 
 ##### 1.3.2    L2BFRCOV Data Products
-The EMIT L2B Fractional Cover collection contains estimated surface fractional cover and quality assurance bands as Cloud Optimized GeoTIFF (COG) files. Each COG file contains multiple bands and the data are organized in a way that allows for efficient access and retrieval of specific bands or subsets of the data.
+The EMIT L2B Fractional Cover collection contains estimated surface fractional cover and quality assurance bands as Cloud Optimized GeoTIFF (COG) files, which are organized to allow efficient access and retrieval of data subsets.
 
 #### 1.4 Product Availability
 The EMIT L2BFRCOV products will be available at the NASA Land Processes Distributed Active Archive Center (LP DAAC, https://lpdaac.usgs.gov/) and through NASA Earthdata (https://earthdata.nasa.gov/).
