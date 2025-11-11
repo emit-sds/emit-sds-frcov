@@ -1,15 +1,17 @@
 # EMIT Fractional Cover Product Delivery - Algorithm Theoretical Basis Document (ATBD)
 
-*Philip Brodrick*<sup>1</sup>, *Francisco Ochoa*<sup>1,2</sup>, *Greg Okin*<sup>2</sup>, *Red Willow Coleman*<sup>1</sup>, *K.D. Chadwick*<sup>1</sup>
+*Philip Brodrick*<sup>1</sup>, *Francisco Ochoa*<sup>1,2</sup>, *Gregory S. Okin*<sup>2</sup>, *Red Willow Coleman*<sup>1,2</sup>, *K.D. Chadwick*<sup>1</sup>
 
 <sup>1</sup>Jet Propulsion Laboratory, California Institute of Technology
+
 <sup>2</sup>University of California, Los Angeles
+
 
 Corresponding author: Philip Brodrick (philip.brodrick@jpl.nasa.gov)
 
 **Key Points:**
    1. Please note that this ATBD will be updated on an ongoing basis as the EMIT extended mission progresses. This is intended to be a place where the community can find the most up-to-date information on the current plans for algorithm development and offer contributions.
-   2. This is a three component model with a series of quality assessment (QA) flags. The mission will be producing a more detailed V2 of this product which will supersede this version during FY26. 
+   2. This is a three-component model with a series of quality assessment (QA) flags. The mission will be producing a more detailed V2 of this product which will supersede this version during FY26. 
    3. If you identify issues with this product not current outlined in the Known Issues section, please contribute that information here to help the community.
 
 **Version:** 1.0
@@ -103,12 +105,12 @@ All values can be tested through parameter selection in the unmix.jl script prov
 | Endmember Selection | MESMA, SMA | SMA |
 | Endmember Selection Strategy | Class-even, Random | Class-even |
 | Normalization | None, Brightness, 1070, 1500, 1756, 2030 | Brightness |
-| Maximum Number of Combinations (MESMA only) | 10, 100, 500, 1000 | 100 |
+| Maximum Number of Combinations (MESMA only) | 10, 100, 500, 1000 | NA |
 | Number of Endmembers per Class per Bootstrap Draw (SMA only) | 5, 10, 30, 50 | 30 |
-| Number of Bootstrap Draws | 1, 5, 10, 20, 50, 100, 200 | 50 |
+| Number of Bootstrap Draws | 1, 5, 10, 20, 50, 100, 200 | 20 |
 
 ![Alt text for the figure](figs/Comparisons.png "Comparisons")
-*Figure 4.2-1: Comparison between two parameter combinations. On top is a Monte Carlo unmixing analysis with 10 endmembers per class per bootstrap draw, brightness normalization, class-even endmember selection, and 50 bootstrap draws. On the bottom is a MESMA-style unmixing analysis with a maximum of 1000 class-even selected endmembers, brightness normalization, and 50 bootstrap draws.*
+*Figure 4.2-1: Comparison between two parameter combinations. On top is the E(MC)<sup>2</sup> unmixing analysis with 10 endmembers per class per bootstrap draw, brightness normalization, class-even endmember selection, and 50 bootstrap draws. On the bottom is a MESMA-style unmixing analysis with a maximum of 1000 class-even selected endmembers, brightness normalization, and 50 bootstrap draws.*
 
 ### 4.3 Fractional Cover Algorithm Input Variables
 
@@ -123,9 +125,9 @@ The required input files for fractional cover production are in Table 4.3-1.
 | Observation Geometry | solar zenith angle, view zenith angle, relative azimuth angle | degree | false |
 
 ### 4.4 Fractional Cover Algorithm Output Variables
-The EMIT output data products delivered to the DAAC use their formatting conventions, the system operates internally on data products stored as binary data cubes with detatched human-readable ASCII header files. For the fraction cover product, the output variables are: 
-1. Fractional cover, provided as an n x c x 3 BIL interleave data cube, with c columns and n lines. Each channel contains the fractional cover as calculated by Monte Carlo SMA (see section 4.2.1).
-2. Fractional cover uncertainty, provided as an n x c x 3 BIL interleave data cube, with c columns and n lines. Each channel contains the estimated uncertainty of the fraction cover, as defined in section 6.2.
+The EMIT output data products delivered to the DAAC use their formatting conventions; the system operates internally on data products stored as binary data cubes with detached human-readable ASCII header files. For the fraction cover product, the output variables are: 
+1. Fractional cover, provided as an n x c x 3 BIL interleave data cube, with c columns and n lines. Each channel contains the fractional cover as calculated by E(MC)<sup>2</sup> (see section 4.2.1). The band order is PV fractional cover (band 1), NPV fractional cover (band 2), and soil fractional cover (band 3).
+2. Fractional cover uncertainty, provided as an n x c x 3 BIL interleave data cube, with c columns and n lines. Each channel contains the estimated uncertainty of the fraction cover, as defined in section 6.2. The band order is PV fractional cover uncertainty (Band 1), NPV fractional cover uncertainty (band 2), and soil fractional cover uncertainty (band 3).
 
 These products are consistent with the auxiliary data products described in the EMIT L3ASA ATBD, section 4.4.2 (Brodrick et al., 2023).
 
@@ -147,16 +149,16 @@ Flag all pixels identified as "cirrus" or "cloud" by the EMIT L2A Mask product (
 
 #### 4.5.2 Urban
 
-Flag all pixels with a ESA WorldCover raster value of 50 as **urban**, which corresponds to the "built-up" class. ESA WoldCover documentation defines the built-up class as: "Land covered by buildings, roads and other man-made structures such as railroads. Buildings include both residential and industrial building. Urban green (parks, sport facilities) is not included in this class. Waste dump deposits and extraction sites are considered as bare" (Zanaga et al., 2021). 
+Flag all pixels with an ESA WorldCover raster value of 50 as **urban**, which corresponds to the "built-up" class. ESA WorldCover documentation defines the built-up class as: "Land covered by buildings, roads and other man-made structures such as railroads. Buildings include both residential and industrial building. Urban green (parks, sports facilities) is not included in this class. Waste dump deposits and extraction sites are considered as bare" (Zanaga et al., 2021). The 10 m WorldCover built-up class dataset was aggregated to the 60 m EMIT resolution using gdalwarp with bilinear resampling. 
 
 
 #### 4.5.3 Water
 
-Flag all pixels identified as "water" by the EMIT L2A Mask product (Green, 2022a) and all pixels that intersect with GSHHG global database of coastlines and rivers (Wessel and Smith, 1996) as **water**. 
+Flag all pixels identified as "water" by the EMIT L2A Mask product (Green, 2022a) and all pixels that intersect with the GSHHG global database of coastlines and rivers (Wessel and Smith, 1996) as **water**. Nearest-neighbor resampling is used to find intersecting EMIT pixels with the GSHHG vector dataset. 
 
 #### 4.5.4 Snow/Ice
 
-The Normalized Difference Snow Index (NDSI) is a index-based metric used to identify pixels that are most likely to be snow and/or ice (Hall et al., 1995). The following equation is used to calculate NDSI from the EMIT L2A surface reflectance product (Green, 2022b): 
+The Normalized Difference Snow Index (NDSI) is an index-based metric used to identify pixels that are most likely to be snow and/or ice (Hall et al., 1995). The following equation is used to calculate NDSI from the EMIT L2A surface reflectance product (Green, 2022b): 
 
 $$
 NDSI = \frac{Green - SWIR}{Green + SWIR}
@@ -165,21 +167,21 @@ $$
 Where 560 nm is the "Green" wavelength band and 1600 nm is the "SWIR (shortwave-infrared)" wavelength band. Following recommendations in the literature that suggest a global NDSI threshold of 0.4 (Hall et al., 2015), flag all pixels with an NDSI value greater than 0.4 as **snow/ice**.
 
 ### 4.6 Fractional Cover QA Product Output Variables
-The EMIT output data products delivered to the DAAC use their formatting conventions, the system operates internally on data products stored as binary data cubes with detatched human-readable ASCII header files.
+The EMIT output data products delivered to the DAAC use their formatting conventions, the system operates internally on data products stored as binary data cubes with detached human-readable ASCII header files.
 
-The QA product is a single band cloud-optimized GeoTIFF (COG), where each flagged QA pixel is assigned one of the following values with colors associated with figures below in parantheses for reference:  
+The QA product is a single band cloud-optimized GeoTIFF (COG), where each flagged QA pixel is assigned one of the following values with colors associated with figures below in parentheses for reference:  
  * 1 = Cloud (orange)
  * 2 = Urban (green)
  * 3 = Water (red)
  * 4 = Snow/Ice
 
- For pixels that contain multiple QA flags (e.g., a water pixel covered by clouds), the following hierarchy is employed: 
+ For pixels that contain multiple QA flags (e.g., a water pixel covered by clouds), the following hierarchy is employed, with lower values taking precedence over higher values: 
  1. If the pixel contains clouds, QA = 1 
  2. If the pixel contains built-up material, QA = 2 
  3. If the pixel contains water or is a coastal pixel, QA = 3
  4. If the pixel is classified as snow/ice, QA = 4
 
-This hierarchy order minimizes incorrect classification of pixels with NDSI thresholding, which is known to over-identify liquid water as snow/ice. 
+This hierarchy order minimizes incorrect classification of pixels with NDSI thresholding, which regularly over-identifies liquid water as snow/ice across the EMIT archive. 
 
 ## 5 Algorithm Usage Constraints
 
@@ -198,9 +200,9 @@ imagery. Overall, SLPIT estimates of fractional cover align well with EMIT obser
 
 ### 6.2 Uncertainties
 
-To estimate the uncertainty of the Monte Carlo SMA results, we run 25 Monte Carlo simulations. During each simulation, the endmember selection is seeded differently (representing model error) and the reflectance is perturbed by a (per-wavelength) random deviation proportionate to the channelized reflectance uncertainty provided by L2A. The standard deviation of the soil fractional cover from the different simulations (𝜎 <_>𝑠 𝑗) is then used as the uncertainty.
+To estimate the uncertainty of the Monte Carlo SMA results, we utilize the variation in the bootstrapped retrievals. During each simulation, the endmember selection is seeded differently (representing model error) and the reflectance is perturbed by a (per-wavelength) random deviation proportionate to the channelized reflectance uncertainty provided by L2A. The standard deviation of the soil fractional cover from the different simulations (𝜎 <_>𝑠 𝑗) is then used as the uncertainty, as in Ochoa et al. (2025).
 
-We neglect the uncertianty assocaited with QA assessment for the purposes of providing a mask for this product.
+We neglect the uncertainty associated with QA assessment for the purposes of providing a mask for this product.
 
 ### 6.3 Known Issues
 The spectral library used for unmixing may not be representative of all surface types globally, leading to potential inaccuracies in fractional cover estimates in some regions. Here we describe known issues with both the fractional cover and fractional cover QA products for users to be aware of. Many of these issues are being addressed in ongoing work to improve the products and will be resolved in a planned v2 release.
@@ -230,7 +232,7 @@ The following issues have been identified with the fractional cover product in a
 
 ### 7.1 Algorithm Availability
 
-Fractional cover algorithms used to generate this product are avaliable in the EMIT SDS project on github (https://github.com/emit-sds/emit-sds-frcov). 
+Fractional cover algorithms used to generate this product are available in the EMIT SDS project on github (https://github.com/emit-sds/emit-sds-frcov). 
 
 ### 7.2 Input Data Access
 All input data required to run the code not found in the above repositories is available at the NASA Digital Archive. 
@@ -248,15 +250,16 @@ All code described here is open source.  All publications sponsored by the EMIT 
 
 ## 11 Contact Details
 
-K. Dana Chadwick 
+Gregory S. Okin
 
-ORCID: 0000-0002-5633-4865 
+ORCID: 0000-0002-0484-3537
 
-Email: dana.chadwick@jpl.nasa.gov 
+Email: okin@ucla.edu
 
-Role(s) related to this ATBD: writing - original and revision, methodology, quality assessment. 
+Role(s) related to this ATBD: editing, methodology
 
-Affiliation – Jet Propulsion Laboratory, California Institute of Technology 
+Affiliation – University of California, Los Angeles
+
 
 --
 
@@ -281,6 +284,19 @@ Email: francisco.ochoa@jpl.nasa.gov; fochoa1@g.ucla.edu
 Role(s) related to this ATBD: editing, methodology. 
 
 Affiliation – Jet Propulsion Laboratory, California Institute of Technology; University of California Los Angeles
+
+--
+
+K. Dana Chadwick 
+
+ORCID: 0000-0002-5633-4865 
+
+Email: dana.chadwick@jpl.nasa.gov 
+
+Role(s) related to this ATBD: writing - original and revision, methodology, quality assessment. 
+
+Affiliation – Jet Propulsion Laboratory, California Institute of Technology 
+-- 
 
 
 ## References
