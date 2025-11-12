@@ -20,37 +20,34 @@ The EMIT Fractional Cover products are provided as Cloud Optimized GeoTIFF (COG)
 
 #### 1.3 File Formats
 
-##### 1.3.1    Metadata Structure
+##### 1.3.1 Metadata Structure
 
-EMIT is operating from the ISS, orbiting Earth approx.16 times in a 24-hour day period. EMIT starts and stops data recording based on a surface coverage acquisition mask. The top-level metadata identifier for EMIT data is an orbit, representing a single rotation of the ISS around Earth. Within an orbit, a period of continuous data acquisition is called a scene and is identified by a scene number. An orbit contains multiple scenes, where each scene can cover up to thousands of kilometers down-track, depending on the acquisition mask map. Each scene is broken into granules of 1280 lines down-track. The last granule in a scene is merged into the one before, making the last granule to be between 1280 and 2560 lines down-track. Granules can be downloaded as COG files, and are identified by a date-time string in the COG file name.  
+EMIT is operating from the ISS, orbiting Earth approx.16 times in a 24-hour day period. EMIT starts and stops data recording based on a surface coverage acquisition mask. The top-level metadata identifier for EMIT data is an orbit, representing a single rotation of the ISS around Earth. Within an orbit, a period of continuous data acquisition is called an orbit segment.  An orbit contains multiple orbit segments, where each orbit segment can cover up to thousands of kilometers down-track, depending on the acquisition mask map. Each orbit segment is subsequently chunked into granules of 1280 lines down-track called scenes. The last scene in an orbit segment is merged into the one before, making the last scene to be between 1280 and 2560 lines down-track. Scenes, also referred to as "granules", can be downloaded as COG files, and are identified by a date-time string in the COG file name.  
 
-The EMIT Level 2B Fractional Cover collection (EMITL2BFRCOV) contains 7 COG files, and 1 quicklook PNG file (Browse). with file content described in Table 1-1.
+##### 1.3.2 Data Products
+
+The "EMIT L2B Fractional Cover and Uncertainty 60 m V001" collection (EMITL2BFRCOV) contains estimated surface fractional cover, uncertainties, and quality assurance bands as Cloud Optimized GeoTIFF (COG) files.  Each granule represents a single scene and contains 7 COG files and 1 quicklook PNG file (Browse), as described in Table 1-1.
 
 Table 1 1: EMITL2BFRCOV collection file list and naming convention
 
 |  File  |  Description  |
 |--------|----------------|
-| EMIT_L2B_FRCOVPV_&lt;VVV&gt;_&lt;YYYYMMDDTHHMMSS&gt;_&lt;OOOOO&gt;_&lt;SSS&gt;.tif  | Fractional Cover, Photosynthetic Vegetation (aerial fraction)|
-| EMIT_L2B_FRCOVNPV_&lt;VVV&gt;_&lt;YYYYMMDDTHHMMSS&gt;_&lt;OOOOO&gt;_&lt;SSS&gt;.tif  | Fractional Cover, Non-Photosynthetic Vegetation (aerial fraction) |
-| EMIT_L2B_FRCOVBARE_&lt;VVV&gt;_&lt;YYYYMMDDTHHMMSS&gt;_&lt;OOOOO&gt;_&lt;SSS&gt;.tif  | Fractional Cover, Bare Soil (aerial fraction) |
-| EMIT_L2B_FRCOVPVUNC_&lt;VVV&gt;_&lt;YYYYMMDDTHHMMSS&gt;_&lt;OOOOO&gt;_&lt;SSS&gt;.tif  | Fractional Cover Uncertainty, Photosynthetic Vegetation (aerial fraction) |
-| EMIT_L2B_FRCOVNPVUNC_&lt;VVV&gt;_&lt;YYYYMMDDTHHMMSS&gt;_&lt;OOOOO&gt;_&lt;SSS&gt;.tif  | Fractional Cover Uncertainty, Non-Photosynthetic Vegetation (aerial fraction) |  
-| EMIT_L2B_FRCOVBAREUNC_&lt;VVV&gt;_&lt;YYYYMMDDTHHMMSS&gt;_&lt;OOOOO&gt;_&lt;SSS&gt;.tif  | Fractional Cover Uncertainty, Bare Soil (aerial fraction) |
-| EMIT_L2B_FRCOVQC_&lt;VVV&gt;_&lt;YYYYMMDDTHHMMSS&gt;_&lt;OOOOO&gt;_&lt;SSS&gt;.tif  | QC Flag Bands (integer)|
-| EMIT_L2B_FRCOV_&lt;VVV&gt;_&lt;YYYYMMDDTHHMMSS&gt;_&lt;OOOOO&gt;_&lt;SSS&gt;.png  | Browse |
+| EMIT_L2B_FRCOVPV_&lt;VVV&gt;_&lt;YYYYMMDDTHHMMSS&gt;_&lt;OOOOOOO&gt;_&lt;SSS&gt;.tif  | Fractional Cover, Photosynthetic Vegetation (aerial fraction)|
+| EMIT_L2B_FRCOVNPV_&lt;VVV&gt;_&lt;YYYYMMDDTHHMMSS&gt;_&lt;OOOOOOO&gt;_&lt;SSS&gt;.tif  | Fractional Cover, Non-Photosynthetic Vegetation (aerial fraction) |
+| EMIT_L2B_FRCOVBARE_&lt;VVV&gt;_&lt;YYYYMMDDTHHMMSS&gt;_&lt;OOOOOOO&gt;_&lt;SSS&gt;.tif  | Fractional Cover, Bare Soil (aerial fraction) |
+| EMIT_L2B_FRCOVPVUNC_&lt;VVV&gt;_&lt;YYYYMMDDTHHMMSS&gt;_&lt;OOOOOOO&gt;_&lt;SSS&gt;.tif  | Fractional Cover Uncertainty, Photosynthetic Vegetation (aerial fraction) |
+| EMIT_L2B_FRCOVNPVUNC_&lt;VVV&gt;_&lt;YYYYMMDDTHHMMSS&gt;_&lt;OOOOOOO&gt;_&lt;SSS&gt;.tif  | Fractional Cover Uncertainty, Non-Photosynthetic Vegetation (aerial fraction) |  
+| EMIT_L2B_FRCOVBAREUNC_&lt;VVV&gt;_&lt;YYYYMMDDTHHMMSS&gt;_&lt;OOOOOOO&gt;_&lt;SSS&gt;.tif  | Fractional Cover Uncertainty, Bare Soil (aerial fraction) |
+| EMIT_L2B_FRCOVQC_&lt;VVV&gt;_&lt;YYYYMMDDTHHMMSS&gt;_&lt;OOOOOOO&gt;_&lt;SSS&gt;.tif  | QC Flag Bands (integer)|
+| EMIT_L2B_FRCOV_&lt;VVV&gt;_&lt;YYYYMMDDTHHMMSS&gt;_&lt;OOOOOOO&gt;_&lt;SSS&gt;.png  | Browse |
 
-
-
-&lt;VVV&gt; gives the software version number, e.g., 001
+&lt;VVV&gt; gives the product version number, e.g., 001
 
 &lt;YYYYMMDDTHHMMSS&gt; is a time stamp, e.g., 20220101T083015
 
-&lt;OOOOO&gt; is the orbit identification number, e.g., 12345
+&lt;OOOOO&gt; is the unique orbit identification number, e.g., 2530101
 
-&lt;SSS&gt; is the scene identification number, e.g., 007
-
-##### 1.3.2    L2BFRCOV Data Products
-The EMIT L2B Fractional Cover collection contains estimated surface fractional cover and quality assurance bands as Cloud Optimized GeoTIFF (COG) files, which are organized to allow efficient access and retrieval of data subsets.
+&lt;SSS&gt; is the scene identification number within an orbit, e.g., 007
 
 #### 1.4 Product Availability
 The EMIT L2BFRCOV products will be available at the NASA Land Processes Distributed Active Archive Center (LP DAAC, https://lpdaac.usgs.gov/) and through NASA Earthdata (https://earthdata.nasa.gov/).
