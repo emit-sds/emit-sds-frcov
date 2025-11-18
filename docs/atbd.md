@@ -315,6 +315,8 @@ Hyperspectral Imager Spectra.</i> Remote Sensing, 11(18), p.2072.
 
 * Ochoa, F., Brodrick, P. G., Okin, G. S., Ben-Dor, E., Meyer, T., Thompson, D. R., & Green, R. O. (2025). <i>Soil and vegetation cover estimation for global imaging spectroscopy using spectral mixture analysis.</i> Remote Sensing of Environment, 324, 114746.
 
+* Ochoa et al. <i> In prep </i>. Evaluating global spectral unmixing techniques using imaging spectroscopy data for retrieval of green, non-photosynthetic vegetation, and soil fractional cover.
+
 * Roberts, D., Gardner, M., Church, R., Ustin, S., Scheer, G., & Green, R. 1998, Remote Sensing of Environment, 65, 267.
 
 * Wessel, P., and W. H. F. Smith (1996), <i>A global, self-consistent, hierarchical, high-resolution shoreline database</i>. Journal of Geophysical Research, 101(B4), 8741–8743. https://doi.org/10.1029/96JB00104
