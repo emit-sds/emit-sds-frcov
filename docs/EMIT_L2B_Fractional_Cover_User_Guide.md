@@ -2,14 +2,38 @@
 
 ## Level 2B Fractional Cover Data Product User Guide
 
-### Draft v01
 
-### 1	Introduction
+**Version:** 1.0 </br>
+**JPL- D-XXXXXX** </br>
 
-#### 1.1	Identification
+Jet Propulsion Laboratory
+California Institute of Technology
+Pasadena, California 91109
+
+**Change Log**
+| Version | Date       | Comments |
+|---------|------------|----------|
+| 1.0     | 2025-12-02 | Initial Draft |
+
+**Table of Contents**
+- [1 Introduction](#1-introduction)
+	- [1.1 Identification](#11-identification)
+	- [1.2 Overview](#12-overview)
+	- [1.3 File Formats](#13-file-formats)
+		- [1.3.1 Metadata Structure](#131-metadata-structure)
+		- [1.3.2 L2BFRCOV Data Products](#132-l2bfrcov-data-products)
+	- [1.4 Product Availability](#14-product-availability)
+- [2 Fractional Cover Estimation and Masking](#2-fractional-cover-estimation-and-masking)
+- [3 References](#3-references)
+- [4 Acronyms](#4-acronyms)
+
+
+## 1 Introduction
+
+### 1.1 Identification
 This document describes information about the file structure and datasets provided in the EMIT L2BFRCOV data product. The algorithms and data content of the L2BFRCOV data products are described briefly in this guide, with the purpose of providing the user with sufficient information about the content and structure of the data files to enable the user to access and use the data, in addition to understanding the uncertainties involved in the products.
 
-#### 1.2	Overview
+### 1.2 Overview
 The EMIT Project delivers space-based measurements of surface mineralogy of the Earth’s arid dust source regions. These measurements are used to initialize Earth System Models (ESM) of the dust cycle, which describe the generation, lofting, transport, and deposition of mineral dust. Earth System Models incorporate the dust cycle to estimate the impacts of mineral dust on the optical and radiative properties of the atmosphere, and a variety of environmental and ecological processes. EMIT on the ISS makes measurements over the sunlit Earth’s surface in the range of ±52° latitude. EMIT-based maps of the fractional cover of surface classes is an essential product needed for analysis of the relative abundance of source minerals to address the prime mission science questions, as well as supporting additional science and applications uses.
 
 The EMIT instrument is a Dyson imaging spectrometer that uses contiguous spectroscopic measurements in the visible to short wavelength infrared region of the spectrum to resolve absorption features of dust-forming minerals. From the instrument’s focal plane array, on-board avionics reads out raw detector counts at 1.6 Gbps, then digitizes and stores this data to a high-speed Solid-State Data Recorder (SSDR).  From there, the avionics software reads the raw uncompressed data, packages this data into frames of 32 instrument lines, screens for cloudy pixels within the frames, and performs a lossless 4:1 compression of the frame’s science data before storing the processed, compressed data back onto the SSDR.  The data is later read from the SSDR, wrapped in CCSDS packets and then formatted as ethernet packets for transmission over the International Space Station (ISS) network and downlinked to the EMIT Instrument Operation System (IOS).  Once on the ground, the EMIT IOS delivers the raw ethernet data to the SDS where Level 0 processing removes the Huntsville Operations and Support Center (HOSC) ethernet headers, groups CCSDS packet streams by APID, and sorts them by course and fine time.
@@ -18,9 +42,9 @@ The Level 2B Fractional Cover (L2BFRCOV) data product contains geolocated fracti
 
 The EMIT Fractional Cover products are provided as Cloud Optimized GeoTIFF (COG) files, with quicklooks as PNG files.
 
-#### 1.3 File Formats
+### 1.3 File Formats
 
-##### 1.3.1 Metadata Structure
+#### 1.3.1 Metadata Structure
 
 EMIT is operating from the ISS, orbiting Earth approx.16 times in a 24-hour day period. EMIT starts and stops data recording based on a surface coverage acquisition mask. The top-level metadata identifier for EMIT data is an orbit, representing a single rotation of the ISS around Earth. Within an orbit, a period of continuous data acquisition is called an orbit segment.  An orbit contains multiple orbit segments, where each orbit segment can cover up to thousands of kilometers down-track, depending on the acquisition mask map. Each orbit segment is subsequently chunked into granules of 1280 lines down-track called scenes. The last scene in an orbit segment is merged into the one before, making the last scene to be between 1280 and 2560 lines down-track. Scenes, also referred to as "granules", can be downloaded as COG files, and are identified by a date-time string in the COG file name.  
 
@@ -49,19 +73,20 @@ Table 1 1: EMITL2BFRCOV collection file list and naming convention
 
 &lt;SSS&gt; is the scene identification number within an orbit, e.g., 007
 
-#### 1.4 Product Availability
+
+### 1.4 Product Availability
 The EMIT L2BFRCOV products will be available at the NASA Land Processes Distributed Active Archive Center (LP DAAC, https://lpdaac.usgs.gov/) and through NASA Earthdata (https://earthdata.nasa.gov/).
 
 
-### 2	Fractional Cover Estimation and Masking
+## 2 Fractional Cover Estimation and Masking
 EMIT's Level 2B Fractional Cover (L2BFRCOV) product is generated using the EndMember Combination Monte Carlo, E(MC)<sup>2</sup>, documented in Ochoa et al. (2025). This method models each pixel's spectrum as a linear combination of endmember spectra representing different surface classes. The fractional cover estimates are derived by solving for the coefficients of these endmembers that best fit the observed spectra.
 The L2BFRCOV QC Flags include several flags to ensure the reliability of the fractional cover estimates. Pixel flags are provided for cloud contamination, urban cover, water, and snow/ice masks. A more detailed description of the masking procedure and quality control flags can be found in the EMIT Level 2BFRCOV ATBD in this repository.
 
-### 3 References
+## 3 References
 
 * Ochoa, F., Brodrick, P. G., Okin, G. S., Ben-Dor, E., Meyer, T., Thompson, D. R., & Green, R. O. (2025). <i>Soil and vegetation cover estimation for global imaging spectroscopy using spectral mixture analysis.</i> Remote Sensing of Environment, 324, 114746.
 
-### 4	Acronyms
+## 4 Acronyms
 | Acronym | Definition |
 |---------|------------|
 | ATBD    | Algorithm Theoretical Basis Document |
