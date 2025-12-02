@@ -1,24 +1,33 @@
-# EMIT Fractional Cover Product Delivery - Algorithm Theoretical Basis Document (ATBD)
+# Earth Surface Mineral dust source InvesTigation (EMIT)
 
-*Philip Brodrick*<sup>1</sup>, *Francisco Ochoa*<sup>1,2</sup>, *Gregory S. Okin*<sup>2</sup>, *Red Willow Coleman*<sup>1,2</sup>, *K.D. Chadwick*<sup>1</sup>
+## EMIT L2B Algorithm: Fractional Cover
+
+*Philip G. Brodrick*<sup>1</sup>
+*Francisco Ochoa*<sup>1,2</sup>
+*Gregory S. Okin*<sup>2</sup>
+*Red Willow Coleman*<sup>1,2</sup>
+*K.D. Chadwick*<sup>1</sup>
 
 <sup>1</sup>Jet Propulsion Laboratory, California Institute of Technology
 
 <sup>2</sup>University of California, Los Angeles
 
+**Version:** 1.0 </br>
+**JPL- D-XXXXXX** </br>
 
-Corresponding author: Philip Brodrick (philip.brodrick@jpl.nasa.gov)
+Jet Propulsion Laboratory
+California Institute of Technology
+Pasadena, California 91109
+
+**Change Log**
+| Version | Date       | Comments |
+|---------|------------|----------|
+| 1.0     | 2025-12-02 | Initial Draft |
 
 **Key Points:**
    1. Please note that this ATBD will be updated on an ongoing basis as the EMIT extended mission progresses. This is intended to be a place where the community can find the most up-to-date information on the current plans for algorithm development and offer contributions.
    2. This is a three-component model with a series of quality control (QC) flags. The mission will be producing a more detailed V2 of this product which will supersede this version during FY26. 
    3. If you identify issues with this product not current outlined in the Known Issues section, please contribute that information here to help the community.
-
-**Version:** 1.0
-
-**Release Date:** TBD
-
-**DOI:** TBD
 
 ## Abstract
 
@@ -30,6 +39,41 @@ identified by their characteristic red edge, chlorophyll absorptions, and low re
 We are providing this Algorithm Theoretical Basis Document in a github markdown format in order to provide a record of ongoing updates as algorithms improved via the commit record, as well as allowing the community to engage more directly in the process of documentation in keeping with NASA's commitment to open science. 
 
 ### Keywords: hyperspectral imaging, imaging spectroscopy, fractional cover, terrestrial
+
+## Table of Contents
+- [1. Version Description](#1-version-description)
+- [2. Introduction](#2-introduction)
+- [3. Context/Background](#3-contextbackground)
+  - [3.1 Historical Perspective](#31-historical-perspective)
+  - [3.2 Additional Information](#32-additional-information)
+- [4 Algorithm Description](#4-algorithm-description)
+  - [4.1 Scientific Theory](#41-scientific-theory)
+  - [4.2 Mathematical Theory](#42-mathematical-theory)
+  - [4.3 Algorithm Input Variables](#43-fractional-cover-algorithm-input-variables)
+  - [4.4 Algorithm Output Variables](#44-fractional-cover-algorithm-output-variables)
+  - [4.5 QC Input Variables:](#45-fractional-cover-qc-product-input-variables)
+    - [4.5.1 Clouds](#451-clouds)
+    - [4.5.2 Urban](#452-urban)
+    - [4.5.3 Water](#453-water)
+    - [4.5.4 Snow/Ice](#454-snowice)
+  - [4.6 QC Output Variables](#46-fractional-cover-qc-product-output-variables)
+- [5 Algorithm Usage Constraints](#5-algorithm-usage-constraints)
+- [6 Performance Assessment](#6-performance-assessment)
+  - [6.1 Validation Methods](#61-validation-methods)
+  - [6.2 Uncertainties](#62-uncertainties)
+  - [6.3 Known Issues](#63-known-issues)
+    - [6.3.1 Fractional Cover](#631-fractional-cover)
+    - [6.3.2 Fractional Cover QC](#632-fractional-cover-qc)
+- [7 Algorithm Implementation](#7-algorithm-implementation)
+  - [7.1 Algorithm Availability](#71-algorithm-availability)
+  - [7.2 Input Data Access](#72-input-data-access)
+  - [7.3 Output Data Access](#73-output-data-access)
+- [8 Significance Discussion](#8-significance-discussion)
+- [9 Open Research](#9-open-research)
+- [10 Acknowledgements](#10-acknowledgements)
+- [11 Contact Details](#11-contact-details)
+- [References](#references)
+- [Acronyms](#acronyms)
 
 ## 1 Version Description
 
