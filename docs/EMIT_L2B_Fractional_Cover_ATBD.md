@@ -6,6 +6,7 @@
 *Francisco Ochoa*<sup>1,2</sup>
 *Gregory S. Okin*<sup>2</sup>
 *Red Willow Coleman*<sup>1,2</sup>
+*Adam Chlus*<sup>1</sup>
 *K.D. Chadwick*<sup>1</sup>
 
 <sup>1</sup>Jet Propulsion Laboratory, California Institute of Technology
@@ -203,6 +204,8 @@ Where 560 nm is the "Green" wavelength band and 1600 nm is the "SWIR (shortwave-
 The EMIT output data products delivered to the DAAC use their formatting conventions, the system operates internally on data products stored as binary data cubes with detached human-readable ASCII header files.
 
 The QC product is a single band cloud-optimized GeoTIFF (COG), where each flagged QC pixel is assigned one of the following values with colors associated with figures below in parentheses for reference:  
+ * -9999 = Fill / Nodata Value (no EMIT data present)
+ * 0 = No QC Flag - Valid Fractional Cover Pixel
  * 1 = Cloud (orange)
  * 2 = Urban (green)
  * 3 = Water (red)
