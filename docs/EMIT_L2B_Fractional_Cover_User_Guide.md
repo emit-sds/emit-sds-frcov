@@ -73,9 +73,8 @@ Table 1 1: EMITL2BFRCOV collection file list and naming convention
 
 &lt;SSS&gt; is the scene identification number within an orbit, e.g., 007
 
-
-### 1.4 Product Availability
-The EMIT L2BFRCOV products will be available at the NASA Land Processes Distributed Active Archive Center (LP DAAC, https://lpdaac.usgs.gov/) and through NASA Earthdata (https://earthdata.nasa.gov/).
+#### 1.4 Product Availability
+The EMIT L2BFRCOV products will be available at the NASA Land Processes Distributed Active Archive Center (LP DAAC, https://www.earthdata.nasa.gov/centers/lp-daac) and through NASA Earthdata (https://earthdata.nasa.gov/).
 
 
 ## 2 Fractional Cover Estimation and Masking

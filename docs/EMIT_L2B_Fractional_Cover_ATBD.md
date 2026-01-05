@@ -128,8 +128,8 @@ Code to build spectral unmixing library: [Terraspec](https://github.com/fotxoa-g
 To estimate fractional cover, we use a Monte Carlo Spectral Unmixing strategy, based on decades of literature (e.g., Roberts et al. 1998, Asner and Lobell 2000, and Dennison et al., 2019). 
 Several key parameters, including the endmember selection strategy, observation normalization techniques, and the number of bootstrap samples were investigated. 
 Simulation experiments comparing over one million synthetic spectra constructed with endmember holdout sets were utilized to select parameter values (generally following the approach of Okin et al., 2001, 2015).
-Selected parameter values are shown in Table 4.2.1-1. Parameters were chosen based on a combination of mean absolute error, prediction variance, prediction bias, and computation time. 
-All values can be tested through parameter selection in the unmix.jl script provided in the SpectralUnmixing EMIT SDS repository (https://github.com/emit-sds/SpectralUnmixing). A sample comparison between two scenarios is shown in Figure 4.2.-1.
+Selected parameter values are shown in Table 4.2-1. Parameters were chosen based on a combination of mean absolute error, prediction variance, prediction bias, and computation time. 
+All values can be tested through parameter selection in the unmix.jl script provided in the SpectralUnmixing EMIT SDS repository (https://github.com/emit-sds/SpectralUnmixing). A sample comparison between two scenarios is shown in Figure 4.2-1.
 
 **Table 4.2-1.** _Unmixing parameter value selection_
 
@@ -159,10 +159,10 @@ The required input files for fractional cover production are in Table 4.3-1.
 
 ### 4.4 Fractional Cover Algorithm Output Variables
 The EMIT output data products delivered to the DAAC use their formatting conventions; the system operates internally on data products stored as binary data cubes with detached human-readable ASCII header files. For the fraction cover product, the output variables are: 
-1. Fractional cover, provided as an n x c x 3 BIL interleave data cube, with c columns and n lines. Each channel contains the fractional cover as calculated by E(MC)<sup>2</sup> (see section 4.2.1). The band order is NPV fractional cover (band 1), PV fractional cover (band 2), and soil fractional cover (band 3).
+1. Fractional cover, provided as an n x c x 3 BIL interleave data cube, with c columns and n lines. Each channel contains the fractional cover as calculated by E(MC)<sup>2</sup> (see section 4.2). The band order is NPV fractional cover (band 1), PV fractional cover (band 2), and soil fractional cover (band 3).
 2. Fractional cover uncertainty, provided as an n x c x 3 BIL interleave data cube, with c columns and n lines. Each channel contains the estimated uncertainty of the fraction cover, as defined in section 6.2. The band order is NPV fractional cover uncertainty (Band 1), PV fractional cover uncertainty (band 2), and soil fractional cover uncertainty (band 3).
 
-These products are consistent with the auxiliary data products described in the EMIT L3ASA ATBD, section 4.4.2 (Brodrick et al., 2023).
+These products are consistent with the auxiliary data products described in the EMIT L3ASA ATBD (Brodrick et al., 2023).
 
 ### 4.5 Fractional Cover QC Product Input Variables
 The required input files for fractional cover QC production are in Table 4.5-1.
@@ -345,6 +345,8 @@ Affiliation – Jet Propulsion Laboratory, California Institute of Technology
 ## References
 
 * Asner, Gregory P., and David B. Lobell. <i>A biogeophysical approach for automated SWIR unmixing of soils and vegetation.</i> Remote sensing of environment 74.1 (2000): 99-112.
+
+* Brodrick, P., Okin, G., Ochoa, F., Thompson, D., Clark, R., Ehlmann, B., Keebler, A., Miller, R., Mohawald, N., Ginoux, P., Garcia-Pando, C., Goncalves, M., &amp; Green, R. (2025). <i>EMIT L3 Aggregated Mineral Spectral Abundance and Uncertainty 0.5 Deg V002</i> [Data set]. NASA Land Processes Distributed Active Archive Center. https://doi.org/10.5067/EMIT/EMITL3ASA.002 Date Accessed: 2025-12-16
 
 * Dennison, P.E., Qi, Y., Meerdink, S.K., Kokaly, R.F., Thompson, D.R., Daughtry, C.S., Quemada, M., Roberts, D.A., Gader, P.D., Wetherley, E.B. and Numata, I., 2019. <i>Comparison of Methods for Modeling Fractional Cover Using Simulated Satellite
 Hyperspectral Imager Spectra.</i> Remote Sensing, 11(18), p.2072.
