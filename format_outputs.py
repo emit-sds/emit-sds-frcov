@@ -59,7 +59,7 @@ def add_metadata_to_cog(input_file, product_metadata, software_build_version, pr
         "sensor": "EMIT (Earth Surface Mineral Dust Source Investigation)",
         "instrument": "EMIT",
         "platform": "ISS",
-        "Conventions": "CF-1.63",
+        "Conventions": "CF-1.13",
         "institution": "NASA Jet Propulsion Laboratory/California Institute of Technology",
         "license": "https://www.earthdata.nasa.gov/engage/open-data-services-software-policies/data-use-guidance",
         "naming_authority": "LPDAAC",
