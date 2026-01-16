@@ -1,24 +1,34 @@
-# EMIT Fractional Cover Product Delivery - Algorithm Theoretical Basis Document (ATBD)
+# Earth Surface Mineral dust source InvesTigation (EMIT)
 
-*Philip Brodrick*<sup>1</sup>, *Francisco Ochoa*<sup>1,2</sup>, *Gregory S. Okin*<sup>2</sup>, *Red Willow Coleman*<sup>1,2</sup>, *K.D. Chadwick*<sup>1</sup>
+## EMIT L2B Algorithm: Fractional Cover
+
+*Philip G. Brodrick*<sup>1</sup>
+*Francisco Ochoa*<sup>1,2</sup>
+*Gregory S. Okin*<sup>2</sup>
+*Red Willow Coleman*<sup>1,2</sup>
+*Adam Chlus*<sup>1</sup>
+*K.D. Chadwick*<sup>1</sup>
 
 <sup>1</sup>Jet Propulsion Laboratory, California Institute of Technology
 
 <sup>2</sup>University of California, Los Angeles
 
+**Version:** 1.0 </br>
+**JPL- D-XXXXXX** </br>
 
-Corresponding author: Philip Brodrick (philip.brodrick@jpl.nasa.gov)
+Jet Propulsion Laboratory
+California Institute of Technology
+Pasadena, California 91109
+
+**Change Log**
+| Version | Date       | Comments |
+|---------|------------|----------|
+| 1.0     | 2025-12-02 | Initial Draft |
 
 **Key Points:**
    1. Please note that this ATBD will be updated on an ongoing basis as the EMIT extended mission progresses. This is intended to be a place where the community can find the most up-to-date information on the current plans for algorithm development and offer contributions.
    2. This is a three-component model with a series of quality control (QC) flags. The mission will be producing a more detailed V2 of this product which will supersede this version during FY26. 
    3. If you identify issues with this product not current outlined in the Known Issues section, please contribute that information here to help the community.
-
-**Version:** 1.0
-
-**Release Date:** TBD
-
-**DOI:** TBD
 
 ## Abstract
 
@@ -30,6 +40,41 @@ identified by their characteristic red edge, chlorophyll absorptions, and low re
 We are providing this Algorithm Theoretical Basis Document in a github markdown format in order to provide a record of ongoing updates as algorithms improved via the commit record, as well as allowing the community to engage more directly in the process of documentation in keeping with NASA's commitment to open science. 
 
 ### Keywords: hyperspectral imaging, imaging spectroscopy, fractional cover, terrestrial
+
+## Table of Contents
+- [1. Version Description](#1-version-description)
+- [2. Introduction](#2-introduction)
+- [3. Context/Background](#3-contextbackground)
+  - [3.1 Historical Perspective](#31-historical-perspective)
+  - [3.2 Additional Information](#32-additional-information)
+- [4 Algorithm Description](#4-algorithm-description)
+  - [4.1 Scientific Theory](#41-scientific-theory)
+  - [4.2 Mathematical Theory](#42-mathematical-theory)
+  - [4.3 Algorithm Input Variables](#43-fractional-cover-algorithm-input-variables)
+  - [4.4 Algorithm Output Variables](#44-fractional-cover-algorithm-output-variables)
+  - [4.5 QC Input Variables:](#45-fractional-cover-qc-product-input-variables)
+    - [4.5.1 Clouds](#451-clouds)
+    - [4.5.2 Urban](#452-urban)
+    - [4.5.3 Water](#453-water)
+    - [4.5.4 Snow/Ice](#454-snowice)
+  - [4.6 QC Output Variables](#46-fractional-cover-qc-product-output-variables)
+- [5 Algorithm Usage Constraints](#5-algorithm-usage-constraints)
+- [6 Performance Assessment](#6-performance-assessment)
+  - [6.1 Validation Methods](#61-validation-methods)
+  - [6.2 Uncertainties](#62-uncertainties)
+  - [6.3 Known Issues](#63-known-issues)
+    - [6.3.1 Fractional Cover](#631-fractional-cover)
+    - [6.3.2 Fractional Cover QC](#632-fractional-cover-qc)
+- [7 Algorithm Implementation](#7-algorithm-implementation)
+  - [7.1 Algorithm Availability](#71-algorithm-availability)
+  - [7.2 Input Data Access](#72-input-data-access)
+  - [7.3 Output Data Access](#73-output-data-access)
+- [8 Significance Discussion](#8-significance-discussion)
+- [9 Open Research](#9-open-research)
+- [10 Acknowledgements](#10-acknowledgements)
+- [11 Contact Details](#11-contact-details)
+- [References](#references)
+- [Acronyms](#acronyms)
 
 ## 1 Version Description
 
@@ -84,8 +129,8 @@ Code to build spectral unmixing library: [Terraspec](https://github.com/fotxoa-g
 To estimate fractional cover, we use a Monte Carlo Spectral Unmixing strategy, based on decades of literature (e.g., Roberts et al. 1998, Asner and Lobell 2000, and Dennison et al., 2019). 
 Several key parameters, including the endmember selection strategy, observation normalization techniques, and the number of bootstrap samples were investigated. 
 Simulation experiments comparing over one million synthetic spectra constructed with endmember holdout sets were utilized to select parameter values (generally following the approach of Okin et al., 2001, 2015).
-Selected parameter values are shown in Table 4.2.1-1. Parameters were chosen based on a combination of mean absolute error, prediction variance, prediction bias, and computation time. 
-All values can be tested through parameter selection in the unmix.jl script provided in the SpectralUnmixing EMIT SDS repository (https://github.com/emit-sds/SpectralUnmixing). A sample comparison between two scenarios is shown in Figure 4.2.-1.
+Selected parameter values are shown in Table 4.2-1. Parameters were chosen based on a combination of mean absolute error, prediction variance, prediction bias, and computation time. 
+All values can be tested through parameter selection in the unmix.jl script provided in the SpectralUnmixing EMIT SDS repository (https://github.com/emit-sds/SpectralUnmixing). A sample comparison between two scenarios is shown in Figure 4.2-1.
 
 **Table 4.2-1.** _Unmixing parameter value selection_
 
@@ -115,10 +160,10 @@ The required input files for fractional cover production are in Table 4.3-1.
 
 ### 4.4 Fractional Cover Algorithm Output Variables
 The EMIT output data products delivered to the DAAC use their formatting conventions; the system operates internally on data products stored as binary data cubes with detached human-readable ASCII header files. For the fraction cover product, the output variables are: 
-1. Fractional cover, provided as an n x c x 3 BIL interleave data cube, with c columns and n lines. Each channel contains the fractional cover as calculated by E(MC)<sup>2</sup> (see section 4.2.1). The band order is NPV fractional cover (band 1), PV fractional cover (band 2), and soil fractional cover (band 3).
+1. Fractional cover, provided as an n x c x 3 BIL interleave data cube, with c columns and n lines. Each channel contains the fractional cover as calculated by E(MC)<sup>2</sup> (see section 4.2). The band order is NPV fractional cover (band 1), PV fractional cover (band 2), and soil fractional cover (band 3).
 2. Fractional cover uncertainty, provided as an n x c x 3 BIL interleave data cube, with c columns and n lines. Each channel contains the estimated uncertainty of the fraction cover, as defined in section 6.2. The band order is NPV fractional cover uncertainty (Band 1), PV fractional cover uncertainty (band 2), and soil fractional cover uncertainty (band 3).
 
-These products are consistent with the auxiliary data products described in the EMIT L3ASA ATBD, section 4.4.2 (Brodrick et al., 2023).
+These products are consistent with the auxiliary data products described in the EMIT L3ASA ATBD (Brodrick et al., 2023).
 
 ### 4.5 Fractional Cover QC Product Input Variables
 The required input files for fractional cover QC production are in Table 4.5-1.
@@ -159,6 +204,8 @@ Where 560 nm is the "Green" wavelength band and 1600 nm is the "SWIR (shortwave-
 The EMIT output data products delivered to the DAAC use their formatting conventions, the system operates internally on data products stored as binary data cubes with detached human-readable ASCII header files.
 
 The QC product is a single band cloud-optimized GeoTIFF (COG), where each flagged QC pixel is assigned one of the following values with colors associated with figures below in parentheses for reference:  
+ * -9999 = Fill / Nodata Value (no EMIT data present)
+ * 0 = No QC Flag - Valid Fractional Cover Pixel
  * 1 = Cloud (orange)
  * 2 = Urban (green)
  * 3 = Water (red)
@@ -301,6 +348,8 @@ Affiliation – Jet Propulsion Laboratory, California Institute of Technology
 ## References
 
 * Asner, Gregory P., and David B. Lobell. <i>A biogeophysical approach for automated SWIR unmixing of soils and vegetation.</i> Remote sensing of environment 74.1 (2000): 99-112.
+
+* Brodrick, P., Okin, G., Ochoa, F., Thompson, D., Clark, R., Ehlmann, B., Keebler, A., Miller, R., Mohawald, N., Ginoux, P., Garcia-Pando, C., Goncalves, M., &amp; Green, R. (2025). <i>EMIT L3 Aggregated Mineral Spectral Abundance and Uncertainty 0.5 Deg V002</i> [Data set]. NASA Land Processes Distributed Active Archive Center. https://doi.org/10.5067/EMIT/EMITL3ASA.002 Date Accessed: 2025-12-16
 
 * Dennison, P.E., Qi, Y., Meerdink, S.K., Kokaly, R.F., Thompson, D.R., Daughtry, C.S., Quemada, M., Roberts, D.A., Gader, P.D., Wetherley, E.B. and Numata, I., 2019. <i>Comparison of Methods for Modeling Fractional Cover Using Simulated Satellite
 Hyperspectral Imager Spectra.</i> Remote Sensing, 11(18), p.2072.
