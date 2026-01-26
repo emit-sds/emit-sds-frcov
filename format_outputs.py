@@ -15,36 +15,36 @@ product_metadata = {
         'cov': {
             'name': 'EMIT_L2B_FRCOVPV',
             'description': 'Photosynthetic Vegetation Fractional Cover Values',
-            'units': 'percent'
+            'units': 'fraction'
         },
         'unc': {
             'name': 'EMIT_L2B_FRCOVPVUNC',
             'description': 'Photosynthetic Vegetation Fractional Cover Uncertainty Values',
-            'units': 'percent'
+            'units': 'fraction'
         }
     },
     'npv': {
         'cov': {
             'name': 'EMIT_L2B_FRCOVNPV',
             'description': 'Non-photosynthetic Vegetation Fractional Cover Values',
-            'units': 'percent'
+            'units': 'fraction'
         },
         'unc': {
             'name': 'EMIT_L2B_FRCOVNPVUNC',
             'description': 'Non-photosynthetic Vegetation Fractional Cover Uncertainty Values',
-            'units':  'percent'
+            'units':  'fraction'
         }
     },
     'bare': {
         'cov': {
             'name': 'EMIT_L2B_FRCOVBARE',
             'description': 'Bare Soil Fractional Cover Values',
-            'units': 'percent'
+            'units': 'fraction'
         },
         'unc': {
             'name': 'EMIT_L2B_FRCOVBAREUNC',
             'description': 'Bare Soil Fractional Cover Uncertainty Values',
-            'units':  'percent'
+            'units':  'fraction'
         }
     },
     'qc': {

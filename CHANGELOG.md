@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+#### [v0.1.2](https://github.com/emit-sds/emit-sds-frcov/compare/v0.1.1...v0.1.2)
+
+> 26 Jan 2026
+
+* Change percent to fraction by @winstonolson in https://github.com/emit-sds/emit-sds-frcov/pull/25
+
 #### [v0.1.1](https://github.com/emit-sds/emit-sds-frcov/compare/v0.1.0...v0.1.1)
 
 > 16 Jan 2026
