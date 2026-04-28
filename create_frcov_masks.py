@@ -81,7 +81,7 @@ def create_masks(rfl_file, l2a_mask_file, glt_file, frcov_mask, urban_data, coas
     _, ndsi_mask = open_tif(ndsi_ortho_file)
 
     emit_meta, emit_mask = open_tif(ortho_mask_file)
-    emit_cloud = emit_mask[:,:,9] # SpecTf cloud flag
+    emit_cloud = emit_mask[:,:,5] # SpecTf cloud flag
     emit_cirrus = emit_mask[:,:,1]
     emit_water = emit_mask[:,:,2]
 
