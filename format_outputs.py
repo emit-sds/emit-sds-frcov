@@ -71,7 +71,7 @@ def add_metadata_to_cog(input_file, product_metadata, software_build_version, pr
         "project": "Earth Surface Mineral Dust Source Investigation",
         "project_url": "https://earth.jpl.nasa.gov/emit/",
         "publisher_name": "NASA LPDAAC",
-        "publisher_url": "https://lpdaac.usgs.gov",
+        "publisher_url": "https://www.earthdata.nasa.gov/centers/lp-daac",
         "publisher_email": "lpdaac@usgs.gov",
         "identifier_product_doi_authority": "https://doi.org",
         "software_build_version": software_build_version,
