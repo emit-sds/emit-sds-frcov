@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+#### [v1.0.0](https://github.com/emit-sds/emit-sds-frcov/compare/v0.1.2...v1.0.0)
+
+> 3 Sep 2026
+
+* Updated SpecTf cloud band index to be compatible with V3 mask product by @adamchlus in https://github.com/emit-sds/emit-sds-frcov/pull/27
+
 #### [v0.1.2](https://github.com/emit-sds/emit-sds-frcov/compare/v0.1.1...v0.1.2)
 
 > 26 Jan 2026
